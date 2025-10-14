@@ -1,0 +1,43 @@
+name: BuildWxread
+
+permissions:
+  contents: write
+
+# 触发条件
+on:
+  workflow_dispatch:
+  push:
+    branch:
+      - 'main'
+    paths:
+      - '/**'
+
+jobs:
+  build:
+    # 运行环境
+    runs-on: ubuntu-latest
+    # 运行步骤
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.4'
+      - uses: actions/checkout@v4
+
+      - run: go install github.com/mitchellh/gox@latest # 安装 gox
+      - name: Build
+        run: |
+          make build-linux-amd64
+
+      - name: Commit Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.email "ximplez@foxmail.com"
+          git config --global user.name "ximplez"
+          git pull
+          git add .
+          git pull
+          git commit -m "build wxread"
+          git pull
+          git push
