@@ -27,7 +27,7 @@ jobs:
       - name: run
         run: |
           cd exe
-          chmod +x 775 wxread_linux_amd64
+          chmod +R 777 wxread_linux_amd64
           ./wxread_linux_amd64 -t ${{ vars.TARGET_TIME }} -b ${{ vars.BOOK_NAME }} -fb ${{ secrets.FEISHU_BOT_URL }} -c ${{ secrets.COOKIES }}
 
   keepalive-job:
