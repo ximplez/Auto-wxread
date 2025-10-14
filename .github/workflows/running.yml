@@ -28,7 +28,7 @@ jobs:
         run: |
           cd exe
           chmod -R 777 wxread_linux_amd64
-          ./wxread_linux_amd64 -t ${{ vars.TARGET_TIME }} -b ${{ vars.BOOK_NAME }} -fb ${{ secrets.FEISHU_BOT_URL }} -c ${{ secrets.COOKIES }}
+          ./wxread_linux_amd64 -t ${{ vars.TARGET_TIME }} -fb ${{ secrets.FEISHU_BOT_URL }} -c ${{ secrets.COOKIES }} -b ${{ vars.BOOK_NAME }} 
 
   keepalive-job:
     name: Keepalive Workflow
