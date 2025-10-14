@@ -312,7 +312,7 @@ func startRead() chromedp.ActionFunc {
 			}
 		}()
 		for {
-			if err := chromedp.Sleep(randomReadTime(10, 60)).Do(ctx); err != nil {
+			if err := chromedp.Sleep(randomReadTime(10, 30)).Do(ctx); err != nil {
 				return err
 			}
 			if err := nextPage(ctx); err != nil {
