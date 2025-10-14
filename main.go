@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand/v2"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -48,15 +49,15 @@ func main() {
 	if tt == nil || *tt <= 0 {
 		log.Fatalln("targetTime 非法")
 	}
-	if fb != nil && *fb != "" {
-		feishuBotUrl = *fb
+	if fb != nil && strings.TrimSpace(*fb) != "" {
+		feishuBotUrl = strings.TrimSpace(*fb)
 	}
-	if c != nil && *c != "" {
-		cookies = *c
+	if c != nil && strings.TrimSpace(*c) != "" {
+		cookies = strings.TrimSpace(*c)
 	}
 	targetReadTime = time.Minute * time.Duration(*tt)
-	if b != nil && *b != "" {
-		bookTitle = *b
+	if b != nil && strings.TrimSpace(*b) != "" {
+		bookTitle = strings.TrimSpace(*b)
 	}
 	log.Printf("目标阅读时间: %s, 目标书名: %s", targetReadTime.String(), bookTitle)
 	log.Print(cookies)
