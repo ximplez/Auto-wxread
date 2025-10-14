@@ -58,6 +58,7 @@ func main() {
 	if b != nil && *b != "" {
 		bookTitle = *b
 	}
+	log.Printf("目标阅读时间: %s, 目标书名: %s", targetReadTime.String(), bookTitle)
 
 	// 访问网页
 	err := accessWeb()
