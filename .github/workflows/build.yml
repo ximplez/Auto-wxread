@@ -7,6 +7,14 @@ permissions:
 on:
   workflow_dispatch:
   push:
+    paths-ignore:
+      - '*.md'
+      - '.github/workflows/**'
+      - '.gitignore'
+      - '.git/**'
+      - 'LICENSE'
+      - 'Makefile'
+      - 'exe/**'
     branches:
       - main
 
