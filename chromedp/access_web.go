@@ -29,7 +29,3 @@ func AccessWebWithCtx(ctx context.Context, tasks chromedp.Tasks) error {
 		tasks,
 	)
 }
-
-func AccessWeb(tasks chromedp.Tasks) error {
-	return AccessWebWithCtx(context.Background(), tasks)
-}
