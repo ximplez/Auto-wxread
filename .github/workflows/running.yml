@@ -24,12 +24,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: run
-        run: |
-          cd exe
-          chmod -R 777 wxread_linux_amd64
-          ./wxread_linux_amd64 -b ${{ vars.BOOK_NAME }} -t ${{ vars.TARGET_TIME }} -fb ${{ secrets.FEISHU_BOT_URL }} -c ${{ secrets.COOKIES }}
-        retry: 3  # 设置最多重试3次
+      - uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 15
+          max_attempts: 3
+          command: |
+            cd exe
+            chmod -R 777 wxread_linux_amd64
+            ./wxread_linux_amd64 -b ${{ vars.BOOK_NAME }} -t ${{ vars.TARGET_TIME }} -fb ${{ secrets.FEISHU_BOT_URL }} -c ${{ secrets.COOKIES }}
 
   keepalive-job:
     name: Keepalive Workflow
