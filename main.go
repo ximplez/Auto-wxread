@@ -84,8 +84,8 @@ func accessWeb() error {
 	})
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			summary := fmt.Sprintf("📕书名: %s，总阅读时间: %s, 总阅读页数: %s 页, 平均阅读时间: %s 秒", BlueText(bookTitle),
-				GreenText((time.Millisecond * time.Duration(totalReadTime)).String()), BoldText(strconv.FormatInt(totalReadPageCnt, 10)),
+			summary := fmt.Sprintf("📕书名: %s，总阅读时间: %s, 总阅读页数: %s 页, 平均阅读时间: %s 秒", BoldText(BlueText(bookTitle)),
+				BoldText(GreenText((time.Millisecond * time.Duration(totalReadTime)).String())), BoldText(strconv.FormatInt(totalReadPageCnt, 10)),
 				BoldText(strconv.FormatInt(totalReadTime/1000/totalReadPageCnt, 10)))
 			log.Printf(summary)
 			NotifyFeishu(NewFeishuMsg("微信读书", "🎉结束阅读", summary, ""))
@@ -261,7 +261,7 @@ func startRead() chromedp.ActionFunc {
 		log.Printf("✅ 开始阅读")
 		bar = progressbar.Default(-1, "阅读中...")
 		NotifyFeishu(NewFeishuMsg("微信读书", "📕开始阅读", fmt.Sprintf("📕书名: %s，目标阅读时间: %v",
-			BlueText(bookTitle), GreenText(targetReadTime.String())), ""))
+			BlueText(BoldText(bookTitle)), GreenText(BoldText(targetReadTime.String()))), ""))
 		startTime := time.Now()
 		defer func() {
 			endTime := time.Now()
