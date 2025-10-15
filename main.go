@@ -6,18 +6,15 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand/v2"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/network"
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/chromedp/chromedp/device"
 	"github.com/schollz/progressbar/v3"
 	tool_chromedp "github.com/ximplez/wxread/chromedp"
+	"github.com/ximplez/wxread/device_cfg"
 	"github.com/ximplez/wxread/io"
 	"github.com/ximplez/wxread/json_tool"
 )
@@ -37,7 +34,8 @@ var (
 	// cookies
 	cookies string
 
-	bar *progressbar.ProgressBar
+	bar       *progressbar.ProgressBar
+	deviceCfg = device_cfg.IPadPro
 )
 
 func main() {
@@ -73,14 +71,13 @@ func accessWeb() error {
 	defer cancel()
 	err := tool_chromedp.AccessWebWithCtx(ctx, chromedp.Tasks{
 		// 设置设备模拟
-		chromedp.Emulate(device.KindleFireHDX),
+		chromedp.Emulate(deviceCfg.Device),
 		loadCookies(),
 		// 页面导航
 		chromedp.Navigate(url),
-		chromedp.WaitReady(`#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper`),
+		deviceCfg.AfterNavigate,
 		login(),
 		findBook(),
-		chromedp.WaitReady(`#routerView > div > div.wr_horizontalReader_app_content > div.wr_various_font_provider_wrapper > div > div > div.renderTargetContainer > div.renderTarget_pager > div.renderTarget_pager_content.renderTarget_pager_content_right > button`),
 		beforeRead(),
 		startRead(),
 	})
@@ -92,52 +89,30 @@ func accessWeb() error {
 			NotifyFeishu(NewFeishuMsg("微信读书", "🎉结束阅读", summary, ""))
 			return nil
 		}
-		NotifyFeishu(NewFeishuMsg("微信读书", "❌阅读失败", err.Error(), ""))
+		NotifyFeishu(NewFeishuMsg("微信读书", "❌ 阅读失败", err.Error(), ""))
 		return err
 	}
 	return nil
 }
 func findBook() chromedp.ActionFunc {
 	return func(ctx context.Context) (err error) {
-		var book string
-		ind := "#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_content_wrapper > div > div.wr_index_mini_shelf_wrapper"
-		if err := chromedp.WaitVisible(ind, chromedp.After(func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
-			n := node[0]
-			for i := int64(0); i < n.ChildNodeCount; i++ {
-				// 获取书标题
-				if err := chromedp.Text(fmt.Sprintf("%s > div:nth-child(%d) > a > div > div.wr_index_mini_shelf_card_content_info > div.wr_index_mini_shelf_card_content_title",
-					ind, i+1), &book).Do(ctx); err != nil {
-					log.Printf("err: %v", err)
-					continue
-				}
-				if bookTitle == "" || book == bookTitle {
-					if err := chromedp.Click(fmt.Sprintf("%s > div:nth-child(%d) > a", ind, i+1)).Do(ctx); err != nil {
-						return err
-					}
-					bookTitle = book
-					break
-				}
-			}
-			return nil
-		})).Do(ctx); err != nil {
+		if book, err := deviceCfg.FindBookAndClick(ctx, bookTitle); err != nil {
 			return err
+		} else {
+			if book == "" {
+				return fmt.Errorf("❌ 未找到书: %s", bookTitle)
+			}
+			log.Printf("✅ 找到书: %s", book)
+			bookTitle = book
 		}
-		if book == "" {
-			return fmt.Errorf("❌未找到书: %s", bookTitle)
-		}
-		log.Printf("✅ 找到书: %s", book)
 		return nil
 	}
 }
 
 func beforeRead() chromedp.ActionFunc {
 	return func(ctx context.Context) (err error) {
-		// 获取书标题
-		if err := chromedp.Text("#routerView > div > div.wr_horizontalReader_app_content > div.readerTopBar > div > div.readerTopBar_left > span > span", &bookTitle).Do(ctx); err != nil {
-			return err
-		}
 		log.Printf("📕书名: %s，目标阅读时间: %v", bookTitle, targetReadTime.String())
-		return nil
+		return deviceCfg.BeforeRead(ctx)
 	}
 }
 
@@ -190,7 +165,7 @@ func login() chromedp.ActionFunc {
 		if ok, err := isLogin(ctx); err != nil {
 			return err
 		} else if !ok {
-			log.Printf("❌未登录")
+			log.Printf("❌ 未登录")
 			if err := doLogin().Do(ctx); err != nil {
 				return err
 			}
@@ -216,9 +191,11 @@ func isLogin(ctx context.Context) (bool, error) {
 
 func doLogin() chromedp.ActionFunc {
 	return func(ctx context.Context) (err error) {
+		if err := deviceCfg.BeforeClickLogin.Do(ctx); err != nil {
+			return err
+		}
 		// 点击登录
-		if err := chromedp.Click("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper " +
-			"> div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action > a:nth-child(3)").Do(ctx); err != nil {
+		if err := deviceCfg.ClickLogin.Do(ctx); err != nil {
 			return err
 		}
 		// 渲染登录二维码
@@ -251,48 +228,29 @@ func doLogin() chromedp.ActionFunc {
 
 // 渲染登录二维码
 func renderLogin(ctx context.Context) error {
-	var qrcode string
-	if err := chromedp.QueryAfter("body > div.wr_mask > div > div > div.wr_login_modal_qr_wrapper_container "+
-		"> div.wr_login_modal_qr_wrapper_old > div.wr_login_modal_qr_wrapper > div > img",
-		func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
-			for _, v := range node {
-				qrcode = v.AttributeValue("src")
-			}
-			NotifyFeishu(NewFeishuMsg("微信读书", "🍪扫码登录", "", fmt.Sprintf("https://ximplez.github.io/base64-image-viewer/?target=%s", qrcode)))
-			log.Printf("🍪已发送登录二维码通知")
-			return nil
-		}).Do(ctx); err != nil {
+	if qrcode, err := deviceCfg.FetchLoginQrCode(ctx); err != nil {
 		return err
+	} else {
+		NotifyFeishu(NewFeishuMsg("微信读书", "🍪扫码登录", "", fmt.Sprintf("https://ximplez.github.io/base64-image-viewer/?target=%s", qrcode)))
+		log.Printf("🍪已发送登录二维码通知")
 	}
 	return nil
 }
 
 func qrcodeRefresh(ctx context.Context) error {
-	return chromedp.QueryAfter("body > div.wr_mask > div > div > div.wr_login_modal_qr_wrapper_container > div.wr_login_modal_qr_wrapper_old",
-		func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
-			for _, child := range node[0].Children {
-				if child.AttributeValue("class") == "wr_login_modal_lang" && child.Children[0].NodeValue == "二维码已失效" {
-					log.Printf("🍪二维码失效，刷新中...")
-					if err := chromedp.Click("body > div.wr_mask > div > div > div.wr_login_modal_qr_wrapper_container " +
-						"> div.login_dialog_retry_delegate").Do(ctx); err != nil {
-						return err
-					}
-					if err := renderLogin(ctx); err != nil {
-						return err
-					}
-					log.Printf("✅二维码已刷新")
-				}
-			}
-			return nil
-		}).Do(ctx)
-}
-
-func randomReadTime(min, max int64) time.Duration {
-	if min >= max {
-		return 0
+	if invalid, err := deviceCfg.IsInvalidLoginQrCode(ctx); err != nil {
+		return err
+	} else if invalid {
+		log.Printf("🍪二维码失效，刷新中...")
+		if err := deviceCfg.RefreshLoginQrCode(ctx); err != nil {
+			return err
+		}
+		if err := renderLogin(ctx); err != nil {
+			return err
+		}
+		log.Printf("✅二维码已刷新")
 	}
-	t := min + rand.N[int64](max-min)
-	return time.Duration(t) * time.Second
+	return nil
 }
 
 func startRead() chromedp.ActionFunc {
@@ -312,10 +270,10 @@ func startRead() chromedp.ActionFunc {
 			}
 		}()
 		for {
-			if err := chromedp.Sleep(randomReadTime(10, 30)).Do(ctx); err != nil {
+			if err := deviceCfg.StartRead(ctx); err != nil {
 				return err
 			}
-			if err := nextPage(ctx); err != nil {
+			if err := deviceCfg.NextPage(ctx); err != nil {
 				return err
 			}
 			totalReadPageCnt++
@@ -324,9 +282,4 @@ func startRead() chromedp.ActionFunc {
 			}
 		}
 	}
-}
-func nextPage(ctx context.Context) error {
-	return chromedp.Click("#routerView > div > div.wr_horizontalReader_app_content > " +
-		"div.wr_various_font_provider_wrapper > div > div > div.renderTargetContainer > div.renderTarget_pager > " +
-		"div.renderTarget_pager_content.renderTarget_pager_content_right > button").Do(ctx)
 }
