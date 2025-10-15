@@ -23,6 +23,29 @@ func NewFeishuMsg(app, title, msg, targetUrl string) *FeishuMsg {
 	}
 }
 
+func RedText(text string) string {
+	return "<font color=\"red\">" + text + "</font>"
+}
+
+func GreenText(text string) string {
+	return "<font color=\"green\">" + text + "</font>"
+}
+
+func BlueText(text string) string {
+	return "<font color=\"blue\">" + text + "</font>"
+}
+
+func YellowText(text string) string {
+	return "<font color=\"yellow\">" + text + "</font>"
+}
+
+func GreyText(text string) string {
+	return "<font color=\"grey\">" + text + "</font>"
+}
+func BoldText(text string) string {
+	return "**" + text + "**"
+}
+
 func NotifyFeishu(msg *FeishuMsg) {
 	if msg == nil || feishuBotUrl == "" {
 		return

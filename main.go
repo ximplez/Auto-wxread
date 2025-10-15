@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -83,13 +84,14 @@ func accessWeb() error {
 	})
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			summary := fmt.Sprintf("📕书名: %s，总阅读时间: %s, 总阅读页数: %d 页, 平均阅读时间: %d 秒", bookTitle,
-				(time.Millisecond * time.Duration(totalReadTime)).String(), totalReadPageCnt, totalReadTime/1000/totalReadPageCnt)
+			summary := fmt.Sprintf("📕书名: %s，总阅读时间: %s, 总阅读页数: %s 页, 平均阅读时间: %s 秒", BlueText(bookTitle),
+				GreenText((time.Millisecond * time.Duration(totalReadTime)).String()), BoldText(strconv.FormatInt(totalReadPageCnt, 10)),
+				BoldText(strconv.FormatInt(totalReadTime/1000/totalReadPageCnt, 10)))
 			log.Printf(summary)
 			NotifyFeishu(NewFeishuMsg("微信读书", "🎉结束阅读", summary, ""))
 			return nil
 		}
-		NotifyFeishu(NewFeishuMsg("微信读书", "❌ 阅读失败", err.Error(), ""))
+		NotifyFeishu(NewFeishuMsg("微信读书", "❌ "+RedText("阅读失败"), err.Error(), ""))
 		return err
 	}
 	return nil
@@ -231,7 +233,8 @@ func renderLogin(ctx context.Context) error {
 	if qrcode, err := deviceCfg.FetchLoginQrCode(ctx); err != nil {
 		return err
 	} else {
-		NotifyFeishu(NewFeishuMsg("微信读书", "🍪扫码登录", "", fmt.Sprintf("https://ximplez.github.io/base64-image-viewer/?target=%s", qrcode)))
+		NotifyFeishu(NewFeishuMsg("微信读书", "🍪扫码登录", "",
+			fmt.Sprintf("https://ximplez.github.io/base64-image-viewer/?target=%s", qrcode)))
 		log.Printf("🍪已发送登录二维码通知")
 	}
 	return nil
@@ -257,7 +260,8 @@ func startRead() chromedp.ActionFunc {
 	return func(ctx context.Context) (err error) {
 		log.Printf("✅ 开始阅读")
 		bar = progressbar.Default(-1, "阅读中...")
-		NotifyFeishu(NewFeishuMsg("微信读书", "📕开始阅读", fmt.Sprintf("📕书名: %s，目标阅读时间: %v", bookTitle, targetReadTime.String()), ""))
+		NotifyFeishu(NewFeishuMsg("微信读书", "📕开始阅读", fmt.Sprintf("📕书名: %s，目标阅读时间: %v",
+			BlueText(bookTitle), GreenText(targetReadTime.String())), ""))
 		startTime := time.Now()
 		defer func() {
 			endTime := time.Now()
