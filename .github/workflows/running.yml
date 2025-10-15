@@ -28,7 +28,8 @@ jobs:
         run: |
           cd exe
           chmod -R 777 wxread_linux_amd64
-          ./wxread_linux_amd64 -b ${{ vars.BOOK_NAME }} -t ${{ vars.TARGET_TIME }} -fb ${{ secrets.FEISHU_BOT_URL }} -c ${{ secrets.COOKIES }} 
+          ./wxread_linux_amd64 -b ${{ vars.BOOK_NAME }} -t ${{ vars.TARGET_TIME }} -fb ${{ secrets.FEISHU_BOT_URL }} -c ${{ secrets.COOKIES }}
+        retry: 3  # 设置最多重试3次
 
   keepalive-job:
     name: Keepalive Workflow
