@@ -20,6 +20,7 @@ type DeviceCfg struct {
 	BeforeRead           func(ctx context.Context) error
 	StartRead            func(ctx context.Context) error
 	NextPage             func(ctx context.Context) error
+	IsEndPage            func(ctx context.Context) (bool, error)
 }
 
 type emptyQueryAction struct{}
@@ -30,6 +31,7 @@ func (e *emptyQueryAction) Do(ctx context.Context) error {
 
 var (
 	emptyQuery = &emptyQueryAction{}
+	clean      = &cleanAction{}
 )
 
 func random(min, max int64) int64 {
@@ -41,4 +43,56 @@ func random(min, max int64) int64 {
 
 func randomReadTime(min, max int64) time.Duration {
 	return time.Duration(random(min, max)) * time.Second
+}
+
+type cleanAction struct {
+}
+
+func (c *cleanAction) Do(ctx context.Context) error {
+	if err := chromedp.Evaluate(`Object.defineProperty(navigator, 'webdriver', {
+    get: () => false,
+	configurable: true,
+  });`, nil).Do(ctx); err != nil {
+		return err
+	}
+	if err := chromedp.Evaluate(`window.navigator.chrome = {
+    app: {
+        isInstalled: false,
+        InstallState: {
+            DISABLED: "disabled",
+            INSTALLED: "installed",
+            NOT_INSTALLED: "not_installed"
+        },
+        RunningState: {
+            CANNOT_RUN: "cannot_run",
+            READY_TO_RUN: "ready_to_run",
+            RUNNING: "running"
+        }
+    }
+  };`, nil).Do(ctx); err != nil {
+		return err
+	}
+	// 	if err := chromedp.Evaluate(`await page.evaluateOnNewDocument(() => {
+	//   const originalQuery = window.navigator.permissions.query;
+	//   return window.navigator.permissions.query = (parameters) => (
+	//     parameters.name === 'notifications' ?
+	//       Promise.resolve({ state: Notification.permission }) :
+	//       originalQuery(parameters)
+	//   );
+	// });`, nil).Do(ctx); err != nil {
+	// 		return err
+	// 	}
+	if err := chromedp.Evaluate(`Object.defineProperty(navigator, 'languages', {
+    get: () => ['zh-CN', 'zh'],
+	configurable: true,
+  });`, nil).Do(ctx); err != nil {
+		return err
+	}
+	if err := chromedp.Evaluate(`Object.defineProperty(navigator, 'plugins', {
+    get: () => [1, 2, 3, 4, 5,6],
+	configurable: true,
+  });`, nil).Do(ctx); err != nil {
+		return err
+	}
+	return nil
 }

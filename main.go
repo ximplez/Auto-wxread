@@ -35,8 +35,9 @@ var (
 	// cookies
 	cookies string
 
-	bar       *progressbar.ProgressBar
-	deviceCfg = device_cfg.IPadPro
+	bar          *progressbar.ProgressBar
+	deviceCfg    = device_cfg.IPadPro
+	finishedBook bool
 )
 
 func main() {
@@ -84,17 +85,37 @@ func accessWeb() error {
 	})
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			summary := fmt.Sprintf("📕书名: %s，总阅读时间: %s, 总阅读页数: %s 页, 平均阅读时间: %s 秒", BoldText(BlueText(bookTitle)),
-				BoldText(GreenText((time.Millisecond * time.Duration(totalReadTime)).String())), BoldText(strconv.FormatInt(totalReadPageCnt, 10)),
-				BoldText(strconv.FormatInt(totalReadTime/1000/totalReadPageCnt, 10)))
-			log.Printf(summary)
-			NotifyFeishu(NewFeishuMsg("微信读书", "🎉结束阅读", summary, ""))
+			end()
 			return nil
 		}
-		NotifyFeishu(NewFeishuMsg("微信读书", "❌ "+RedText("阅读失败"), err.Error(), ""))
+		NotifyFeishu(NewFeishuMsg("微信读书", "❌ 阅读失败", err.Error(), ""))
 		return err
 	}
+	if finishedBook {
+		end()
+	}
 	return nil
+}
+
+func end() {
+	finishedText := ""
+	if finishedBook {
+		finishedText = RedText("全书阅读完毕") + " 🎉🎉🎉"
+	}
+	atc := 0
+	if totalReadPageCnt == 0 {
+		atc = 0
+	} else {
+		atc = int(totalReadTime / 1000 / totalReadPageCnt)
+	}
+	summary := fmt.Sprintf(`📕书名: %s %s
+	本次阅读时间: %s
+	本次阅读页数: %s 页
+	本次平均阅读时间: %s 秒`, BoldText(BlueText(bookTitle)), finishedText,
+		BoldText(GreenText((time.Millisecond * time.Duration(totalReadTime)).String())), BoldText(strconv.FormatInt(totalReadPageCnt, 10)),
+		BoldText(strconv.FormatInt(int64(atc), 10)))
+	log.Printf(summary)
+	NotifyFeishu(NewFeishuMsg("微信读书", "🎉结束阅读", summary, ""))
 }
 func findBook() chromedp.ActionFunc {
 	return func(ctx context.Context) (err error) {
@@ -277,6 +298,12 @@ func startRead() chromedp.ActionFunc {
 			if err := deviceCfg.StartRead(ctx); err != nil {
 				return err
 			}
+			if end, err := deviceCfg.IsEndPage(ctx); err != nil {
+				return err
+			} else if end {
+				finishedBook = true
+				break
+			}
 			if err := deviceCfg.NextPage(ctx); err != nil {
 				return err
 			}
@@ -285,5 +312,6 @@ func startRead() chromedp.ActionFunc {
 				log.Printf("progress err. %v", err)
 			}
 		}
+		return nil
 	}
 }

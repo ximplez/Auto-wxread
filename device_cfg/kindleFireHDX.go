@@ -87,4 +87,7 @@ var KindleFireHDX = DeviceCfg{
 			"div.wr_various_font_provider_wrapper > div > div > div.renderTargetContainer > div.renderTarget_pager > " +
 			"div.renderTarget_pager_content.renderTarget_pager_content_right > button").Do(ctx)
 	},
+	IsEndPage: func(ctx context.Context) (bool, error) {
+		return false, nil
+	},
 }

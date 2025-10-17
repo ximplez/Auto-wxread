@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -14,7 +15,7 @@ import (
 
 var IPadPro = DeviceCfg{
 	Device:           device.IPadPro,
-	AfterNavigate:    emptyQuery,
+	AfterNavigate:    clean,
 	BeforeClickLogin: chromedp.WaitReady("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action > a:nth-child(3)"),
 	ClickLogin:       chromedp.Click("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action > a:nth-child(3)"),
 	FetchLoginQrCode: func(ctx context.Context) (string, error) {
@@ -76,10 +77,18 @@ var IPadPro = DeviceCfg{
 		return book, nil
 	},
 	BeforeRead: func(ctx context.Context) error {
-		return chromedp.WaitReady(`#routerView > div > div.app_content > div.wr_various_font_provider_wrapper`).Do(ctx)
+		if err := clean.Do(ctx); err != nil {
+			return err
+		}
+		if err := chromedp.WaitReady(`#routerView > div > div.app_content > div.wr_various_font_provider_wrapper`).Do(ctx); err != nil {
+			return err
+		}
+		return nil
 	},
 	StartRead: func(ctx context.Context) error {
-		if err := chromedp.WaitReady(`#routerView > div > div.app_content > div.wr_various_font_provider_wrapper`).Do(ctx); err != nil {
+		if err := chromedp.QueryAfter(`#routerView > div > div.app_content > div.wr_various_font_provider_wrapper`, func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
+			return clean.Do(ctx)
+		}).Do(ctx); err != nil {
 			return err
 		}
 		cury, prey := float64(0), float64(0)
@@ -118,5 +127,20 @@ var IPadPro = DeviceCfg{
 	},
 	NextPage: func(ctx context.Context) error {
 		return chromedp.Click("#routerView > div > div.app_content > div.readerFooter > div > button:nth-child(1)").Do(ctx)
+	},
+	IsEndPage: func(ctx context.Context) (bool, error) {
+		var end bool
+		if err := chromedp.QueryAfter("#routerView > div > div.app_content > div.readerFooter", func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
+			n := node[0]
+			if clz, ok := n.Attribute("class"); ok {
+				if strings.Contains(clz, "readerFooter_last_page") {
+					end = true
+				}
+			}
+			return nil
+		}).Do(ctx); err != nil {
+			return false, err
+		}
+		return end, nil
 	},
 }
