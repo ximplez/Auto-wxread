@@ -23,15 +23,20 @@ type DeviceCfg struct {
 	IsEndPage            func(ctx context.Context) (bool, error)
 }
 
-type emptyQueryAction struct{}
+type doQueryAction struct {
+	do func(ctx context.Context) error
+}
 
-func (e *emptyQueryAction) Do(ctx context.Context) error {
+func (e *doQueryAction) Do(ctx context.Context) error {
+	if e.do != nil {
+		return e.do(ctx)
+	}
 	return nil
 }
 
 var (
-	emptyQuery = &emptyQueryAction{}
-	clean      = &cleanAction{}
+	emptyQuery = &doQueryAction{}
+	clean      = &doQueryAction{do: cleanAction}
 )
 
 func random(min, max int64) int64 {
@@ -45,10 +50,7 @@ func randomReadTime(min, max int64) time.Duration {
 	return time.Duration(random(min, max)) * time.Second
 }
 
-type cleanAction struct {
-}
-
-func (c *cleanAction) Do(ctx context.Context) error {
+func cleanAction(ctx context.Context) error {
 	if err := chromedp.Evaluate(`Object.defineProperty(navigator, 'webdriver', {
     get: () => false,
 	configurable: true,

@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/ximplez/wxread/json_tool"
+	"github.com/ximplez/wxread/utils/json_tool"
 )
 
 func ReadFile(filePath string) ([]byte, error) {

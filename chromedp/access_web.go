@@ -7,10 +7,10 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func AccessWebWithCtx(ctx context.Context, tasks chromedp.Tasks) error {
+func AccessWebWithCtx(ctx context.Context, tasks chromedp.Tasks, debug bool) error {
 	// 设置浏览器选项
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", true),
+		chromedp.Flag("headless", !debug),
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true),
 		chromedp.Flag("disable-dev-shm-usage", true),

@@ -14,8 +14,16 @@ import (
 )
 
 var IPadPro = DeviceCfg{
-	Device:           device.IPadPro,
-	AfterNavigate:    clean,
+	Device: device.IPadPro,
+	AfterNavigate: &doQueryAction{
+		do: func(ctx context.Context) error {
+			if err := clean.Do(ctx); err != nil {
+				return err
+			}
+			return chromedp.WaitReady("#__nuxt > div > div > div > div.wr_index_page_content_wrapper " +
+				"> div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper").Do(ctx)
+		},
+	},
 	BeforeClickLogin: chromedp.WaitReady("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action > a:nth-child(3)"),
 	ClickLogin:       chromedp.Click("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action > a:nth-child(3)"),
 	FetchLoginQrCode: func(ctx context.Context) (string, error) {

@@ -1,10 +1,10 @@
-package main
+package notify
 
 import (
 	"log"
 
-	"github.com/ximplez/wxread/http"
-	"github.com/ximplez/wxread/json_tool"
+	"github.com/ximplez/wxread/utils/http"
+	"github.com/ximplez/wxread/utils/json_tool"
 )
 
 type FeishuMsg struct {
@@ -46,7 +46,7 @@ func BoldText(text string) string {
 	return "**" + text + "**"
 }
 
-func NotifyFeishu(msg *FeishuMsg) {
+func NotifyFeishu(feishuBotUrl string, msg *FeishuMsg) {
 	if msg == nil || feishuBotUrl == "" {
 		return
 	}
