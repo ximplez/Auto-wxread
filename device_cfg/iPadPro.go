@@ -151,4 +151,24 @@ var IPadPro = DeviceCfg{
 		}
 		return end, nil
 	},
+	GetCatalogInfo: func(ctx context.Context) (res *CatalogInfo, err error) {
+		res = &CatalogInfo{}
+		catalog := "#routerView > div > div:nth-child(5) > div.readerCatalog > section > ul"
+		if err = chromedp.WaitReady(catalog).Do(ctx); err != nil {
+			return
+		}
+		if err = chromedp.Evaluate(fmt.Sprintf("document.querySelector(\"%s\")?.childNodes.length", catalog), &res.totalCatalog).Do(ctx); err != nil {
+			return
+		}
+		if err = chromedp.Evaluate(fmt.Sprintf("Array.prototype.indexOf.call(document.querySelector(\n  '%s'\n)?.children, document.querySelector(\n  '%s .readerCatalog_list_item_selected'\n))", catalog, catalog),
+			&res.curCatalogIndex).Do(ctx); err != nil {
+			return
+		}
+		res.curCatalogIndex++
+		if err = chromedp.Evaluate(fmt.Sprintf("document.querySelector(\n  '%s .readerCatalog_list_item_selected'\n)?.querySelector('.readerCatalog_list_item_title_text')?.textContent", catalog),
+			&res.curCatalogName).Do(ctx); err != nil {
+			return
+		}
+		return
+	},
 }

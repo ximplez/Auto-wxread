@@ -2,6 +2,7 @@ package device_cfg
 
 import (
 	"context"
+	"fmt"
 	"math/rand/v2"
 	"time"
 
@@ -21,6 +22,22 @@ type DeviceCfg struct {
 	StartRead            func(ctx context.Context) error
 	NextPage             func(ctx context.Context) error
 	IsEndPage            func(ctx context.Context) (bool, error)
+	GetCatalogInfo       func(ctx context.Context) (*CatalogInfo, error)
+}
+
+type CatalogInfo struct {
+	curCatalogIndex int64
+	curCatalogName  string
+	totalCatalog    int64
+}
+
+func (e *CatalogInfo) CurProgress() string {
+	return fmt.Sprintf("%.2f%% (%d/%d)", float64(e.curCatalogIndex)/float64(e.totalCatalog)*100,
+		e.curCatalogIndex, e.totalCatalog)
+}
+
+func (e *CatalogInfo) CurCatalog() string {
+	return e.curCatalogName
 }
 
 type doQueryAction struct {

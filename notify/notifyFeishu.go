@@ -35,12 +35,12 @@ func BlueText(text string) string {
 	return "<font color=\"blue\">" + text + "</font>"
 }
 
-func YellowText(text string) string {
-	return "<font color=\"yellow\">" + text + "</font>"
+func PurpleText(text string) string {
+	return "<font color=\"purple\">" + text + "</font>"
 }
 
-func GreyText(text string) string {
-	return "<font color=\"grey\">" + text + "</font>"
+func OrangeText(text string) string {
+	return "<font color=\"orange\">" + text + "</font>"
 }
 func BoldText(text string) string {
 	return "**" + text + "**"
