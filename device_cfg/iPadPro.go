@@ -121,7 +121,7 @@ var IPadPro = DeviceCfg{
 				Do(ctx); err != nil {
 				return err
 			}
-			if err := chromedp.Sleep(1 * time.Second).Do(ctx); err != nil {
+			if err := chromedp.Sleep(time.Duration(random(1, 8)) * time.Second).Do(ctx); err != nil {
 				return err
 			}
 			if err := chromedp.Evaluate("window.scrollY", &cury).Do(ctx); err != nil {
