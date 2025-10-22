@@ -30,7 +30,7 @@ jobs:
       - uses: nick-fields/retry@v3
         id: retry-command
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
           WXREAD_REPO: ${{ github.repository }}
         with:
           timeout_minutes: 100
