@@ -24,7 +24,6 @@ jobs:
     permissions:
       secrets: write
       actions_variables: read
-      environments: write,read
     # 运行步骤
     steps:
       - uses: actions/checkout@v4
