@@ -41,7 +41,7 @@ jobs:
   keepalive-job:
     name: Keepalive Workflow
     if: ${{ always() }}
-    needs: deploy
+    needs: running
     runs-on: ubuntu-latest
     permissions:
       actions: write
