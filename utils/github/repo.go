@@ -18,11 +18,11 @@ func getGithubRepoPubKey(githubToken, repo string) (string, string, error) {
 	} else {
 		resp := json_tool.PhaseJson[map[string]string](bytes)
 		if resp == nil {
-			return "", "", errors.New("获取公钥失败")
+			return "", "", errors.New(fmt.Sprintf("获取公钥失败(%s) resp nil", url))
 		}
 		r := *resp
 		if r["key_id"] == "" || r["key"] == "" {
-			return "", "", errors.New("获取公钥失败：" + json_tool.ToJson(r, false))
+			return "", "", errors.New(fmt.Sprintf("获取公钥失败(%s): %s", url, json_tool.ToJson(r, false)))
 		}
 		return r["key_id"], r["key"], nil
 	}
