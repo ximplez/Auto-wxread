@@ -29,3 +29,14 @@ func Post(url string, data string, headers map[string]string) (http.Header, stri
 	}
 	return resp.Header(), resp.String(), nil
 }
+
+func Put(url string, data string, headers map[string]string) (http.Header, string, error) {
+	resp, err := client.R().
+		SetBody(data).
+		SetHeaders(headers).
+		Put(url)
+	if err != nil {
+		return nil, "", err
+	}
+	return resp.Header(), resp.String(), nil
+}

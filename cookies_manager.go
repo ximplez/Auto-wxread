@@ -2,14 +2,25 @@ package main
 
 import (
 	"context"
+	"log"
 	"os"
+	"strconv"
 
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
+	"github.com/ximplez-go/gf/os/genv"
 	"github.com/ximplez/wxread/utils"
+	"github.com/ximplez/wxread/utils/github"
 	"github.com/ximplez/wxread/utils/http"
 	"github.com/ximplez/wxread/utils/io"
 	"github.com/ximplez/wxread/utils/json_tool"
+)
+
+const (
+	secretCookiesKey = "COOKIES"
+
+	envGithubToken = "GITHUB_TOKEN"
+	envWxReadRepo  = "WXREAD_REPO"
 )
 
 // 加载Cookies
@@ -50,6 +61,15 @@ func saveCookies() chromedp.ActionFunc {
 		// 2. 序列化
 		cookiesData := json_tool.ToJson(network.GetCookiesReturns{Cookies: cks}, false)
 
+		if getGithubToken() != "" && getWxReadRepo() != "" {
+			// 3. 上传到服务器
+			if err := github.CreateOrUpdateGithubSecret(getGithubToken(), getWxReadRepo(), secretCookiesKey, strconv.Quote(cookiesData)); err != nil {
+				return err
+			}
+			log.Printf("✅ cookies保存成功")
+			return nil
+		}
+
 		// 3. 存储到临时文件
 		if err = io.WriteFile("cookies.tmp", cookiesData); err != nil {
 			return err
@@ -76,4 +96,12 @@ func readCookiesFromFile() (string, error) {
 		return "", err
 	}
 	return string(bytes), nil
+}
+
+func getGithubToken() string {
+	return genv.Get(envGithubToken, "").String()
+}
+
+func getWxReadRepo() string {
+	return genv.Get(envWxReadRepo, "").String()
 }

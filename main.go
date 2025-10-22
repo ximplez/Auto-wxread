@@ -26,8 +26,10 @@ var (
 	targetReadTime time.Duration
 	// 飞书机器人通知链接
 	feishuBotUrl string
-	// cookies
+	// cookies or cookies url
 	cookies string
+	// upload cookies url
+	uploadCookiesUrl string
 	// debug模式
 	debug bool
 
@@ -52,8 +54,12 @@ func main() {
 		feishuBotUrl = strings.TrimSpace(s)
 		return nil
 	})
-	flag.Func("c", "cookies", func(s string) error {
+	flag.Func("c", "cookies or cookies url", func(s string) error {
 		cookies = strings.TrimSpace(s)
+		return nil
+	})
+	flag.Func("uc", "upload cookies url", func(s string) error {
+		uploadCookiesUrl = strings.TrimSpace(s)
 		return nil
 	})
 	flag.BoolFunc("debug", "开启debug模式", func(s string) error {
