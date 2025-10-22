@@ -1,8 +1,5 @@
 name: wxread
 
-permissions:
-  secrets: write
-
 concurrency:
   group: ${{ github.workflow }} # 使用工作流名称作为并发组的key
   cancel-in-progress: true    # 取消任何正在进行的相同并发组的工作流
@@ -24,6 +21,8 @@ jobs:
   running:
     # 运行环境
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     # 运行步骤
     steps:
       - uses: actions/checkout@v4
