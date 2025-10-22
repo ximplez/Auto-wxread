@@ -21,8 +21,6 @@ jobs:
   running:
     # 运行环境
     runs-on: ubuntu-latest
-    permissions:
-      actions: write
     # 运行步骤
     steps:
       - uses: actions/checkout@v4
