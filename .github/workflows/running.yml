@@ -22,8 +22,8 @@ jobs:
     # 运行环境
     runs-on: ubuntu-latest
     permissions:
-      secrets: write
-      actions_variables: read
+      - secrets: write
+      - actions_variables: read
     # 运行步骤
     steps:
       - uses: actions/checkout@v4
