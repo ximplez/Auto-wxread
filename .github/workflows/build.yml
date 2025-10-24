@@ -4,9 +4,6 @@ concurrency:
   group: ${{ github.workflow }} # 使用工作流名称作为并发组的key
   cancel-in-progress: true    # 取消任何正在进行的相同并发组的工作流
 
-permissions:
-  contents: write
-
 # 触发条件
 on:
   workflow_dispatch:
@@ -52,8 +49,6 @@ jobs:
           cp -r build/exe/* release/
 
       - name: Commit Changes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd release || exit 1
           git config user.name 'github-actions[bot]'
