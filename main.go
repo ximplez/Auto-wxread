@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/network"
@@ -51,14 +50,6 @@ const (
 
 func main() {
 	tt := flag.Int64("t", 5, "目标阅读时间(分钟)")
-	flag.Func("fb", "飞书机器人通知链接", func(s string) error {
-		feishuBotUrl = strings.TrimSpace(s)
-		return nil
-	})
-	flag.Func("c", "cookies or cookies url", func(s string) error {
-		cookies = strings.TrimSpace(s)
-		return nil
-	})
 	flag.BoolFunc("debug", "开启debug模式", func(s string) error {
 		debug = true
 		return nil
