@@ -25,6 +25,8 @@ jobs:
     # 运行步骤
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: release
 
       - uses: nick-fields/retry@v3
         id: retry-command
@@ -38,7 +40,6 @@ jobs:
           timeout_minutes: 100
           max_attempts: 3
           command: |
-            cd exe
             chmod -R 777 wxread_linux_amd64
             ./wxread_linux_amd64 -t ${{ vars.TARGET_TIME }}
 
