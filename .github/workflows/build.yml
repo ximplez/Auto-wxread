@@ -1,5 +1,9 @@
 name: BuildWxread
 
+concurrency:
+  group: ${{ github.workflow }} # 使用工作流名称作为并发组的key
+  cancel-in-progress: true    # 取消任何正在进行的相同并发组的工作流
+
 permissions:
   contents: write
 
