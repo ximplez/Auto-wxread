@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
@@ -63,7 +62,7 @@ func saveCookies() chromedp.ActionFunc {
 
 		if getGithubToken() != "" && getWxReadRepo() != "" {
 			// 3. 上传到服务器
-			if err := github.CreateOrUpdateGithubSecret(getGithubToken(), getWxReadRepo(), secretCookiesKey, strconv.Quote(cookiesData)); err != nil {
+			if err := github.CreateOrUpdateGithubSecret(getGithubToken(), getWxReadRepo(), secretCookiesKey, cookiesData); err != nil {
 				return err
 			}
 			log.Printf("✅ cookies保存成功")
