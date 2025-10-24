@@ -8,8 +8,8 @@ import (
 
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
-	"github.com/ximplez-go/gf/os/genv"
 	"github.com/ximplez/wxread/utils"
+	"github.com/ximplez/wxread/utils/env_utils"
 	"github.com/ximplez/wxread/utils/github"
 	"github.com/ximplez/wxread/utils/http"
 	"github.com/ximplez/wxread/utils/io"
@@ -99,9 +99,9 @@ func readCookiesFromFile() (string, error) {
 }
 
 func getGithubToken() string {
-	return genv.Get(envGithubToken, "").String()
+	return env_utils.GetEnv(envGithubToken)
 }
 
 func getWxReadRepo() string {
-	return genv.Get(envWxReadRepo, "").String()
+	return env_utils.GetEnv(envWxReadRepo)
 }

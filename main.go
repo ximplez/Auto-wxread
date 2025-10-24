@@ -16,6 +16,7 @@ import (
 	tool_chromedp "github.com/ximplez/wxread/chromedp"
 	"github.com/ximplez/wxread/device_cfg"
 	"github.com/ximplez/wxread/notify"
+	"github.com/ximplez/wxread/utils/env_utils"
 )
 
 var (
@@ -28,8 +29,6 @@ var (
 	feishuBotUrl string
 	// cookies or cookies url
 	cookies string
-	// upload cookies url
-	uploadCookiesUrl string
 	// debug模式
 	debug bool
 
@@ -44,22 +43,20 @@ var (
 	curCatalog *device_cfg.CatalogInfo
 )
 
+const (
+	envCookiesKey   = "COOKIES"
+	envFeishuBotUrl = "FEISHU_BOT_URL"
+	envBookTitle    = "BOOK_NAME"
+)
+
 func main() {
 	tt := flag.Int64("t", 5, "目标阅读时间(分钟)")
-	flag.Func("b", "目标书名", func(s string) error {
-		bookTitle = strings.TrimSpace(s)
-		return nil
-	})
 	flag.Func("fb", "飞书机器人通知链接", func(s string) error {
 		feishuBotUrl = strings.TrimSpace(s)
 		return nil
 	})
 	flag.Func("c", "cookies or cookies url", func(s string) error {
 		cookies = strings.TrimSpace(s)
-		return nil
-	})
-	flag.Func("uc", "upload cookies url", func(s string) error {
-		uploadCookiesUrl = strings.TrimSpace(s)
 		return nil
 	})
 	flag.BoolFunc("debug", "开启debug模式", func(s string) error {
@@ -70,6 +67,9 @@ func main() {
 	if tt == nil || *tt <= 0 {
 		log.Fatalln("targetTime 非法")
 	}
+	bookTitle = env_utils.GetEnv(envBookTitle)
+	cookies = env_utils.GetEnv(envCookiesKey)
+	feishuBotUrl = env_utils.GetEnv(envFeishuBotUrl)
 	targetReadTime = time.Minute * time.Duration(*tt)
 	log.Printf("目标阅读时间: %s, 目标书名: %s", targetReadTime.String(), bookTitle)
 
