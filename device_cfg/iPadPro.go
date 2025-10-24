@@ -28,8 +28,7 @@ var IPadPro = DeviceCfg{
 	ClickLogin:       chromedp.Click("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action > a:nth-child(3)"),
 	FetchLoginQrCode: func(ctx context.Context) (string, error) {
 		var qrcode string
-		if err := chromedp.QueryAfter("body > div.wr_mask > div > div > div.wr_login_modal_qr_wrapper_container "+
-			"> div.wr_login_modal_qr_wrapper_old > div.wr_login_modal_qr_wrapper > div > img",
+		if err := chromedp.QueryAfter("body > div.wr_mask > div > div > div.wr_login_modal_qr_wrapper_container > div.wr_login_modal_qr_wrapper_old > div.wr_login_modal_qr_wrapper > div > img",
 			func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
 				for _, v := range node {
 					qrcode = v.AttributeValue("src")
@@ -42,6 +41,12 @@ var IPadPro = DeviceCfg{
 	},
 	IsInvalidLoginQrCode: func(ctx context.Context) (bool, error) {
 		var invalid bool
+		var mask any
+		if err := chromedp.Evaluate(`document.querySelector("body > div.wr_mask")`, &mask).Do(ctx); err != nil {
+			return false, err
+		} else if mask == nil {
+			return false, nil
+		}
 		if err := chromedp.QueryAfter("body > div.wr_mask > div > div > div.wr_login_modal_qr_wrapper_container > div.wr_login_modal_qr_wrapper_old",
 			func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
 				for _, child := range node[0].Children {
@@ -56,8 +61,11 @@ var IPadPro = DeviceCfg{
 		return invalid, nil
 	},
 	RefreshLoginQrCode: func(ctx context.Context) error {
-		return chromedp.Click("body > div.wr_mask > div > div > div.wr_login_modal_qr_wrapper_container " +
-			"> div.login_dialog_retry_delegate").Do(ctx)
+		if err := chromedp.Click("body > div.wr_mask > div > div > div.wr_login_modal_qr_wrapper_container " +
+			"> div.login_dialog_retry_delegate").Do(ctx); err != nil {
+			return err
+		}
+		return chromedp.Sleep(2 * time.Second).Do(ctx)
 	},
 	FindBookAndClick: func(ctx context.Context, bookName string) (string, error) {
 		var book string

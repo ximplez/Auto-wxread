@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/chromedp/cdproto/network"
@@ -173,9 +174,16 @@ func isLogin(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	var vid, skey bool
 	for _, cookie := range cookies {
-		if cookie.Name == "wr_name" && cookie.Value != "" {
+		if vid && skey {
 			return true, nil
+		}
+		if cookie.Name == "wr_skey" && cookie.Value != "" {
+			skey = true
+		}
+		if cookie.Name == "wr_vid" && cookie.Value != "" {
+			vid = true
 		}
 	}
 	return false, err
@@ -194,18 +202,32 @@ func doLogin() chromedp.ActionFunc {
 		if err := renderLogin(ctx); err != nil {
 			return err
 		}
-		// 二维码监控
-		for {
-			if err := qrcodeRefresh(ctx); err != nil {
-				return err
+		hasLogin := atomic.Bool{}
+		// 异步监控二维码过期
+		go func() {
+			for {
+				if hasLogin.Load() {
+					return
+				}
+				if err := qrcodeRefresh(ctx); err != nil {
+					log.Printf("err: %v", err)
+					return
+				}
+				if err := chromedp.Sleep(5 * time.Second).Do(ctx); err != nil {
+					log.Printf("err: %v", err)
+					return
+				}
 			}
+		}()
+		for {
 			log.Printf("🍪登录中")
-			if err := chromedp.Sleep(10 * time.Second).Do(ctx); err != nil {
+			if err := chromedp.Sleep(2 * time.Second).Do(ctx); err != nil {
 				return err
 			}
 			if ok, err := isLogin(ctx); err != nil {
 				return err
 			} else if ok {
+				hasLogin.Store(true)
 				log.Printf("✅登录成功")
 				break
 			}
