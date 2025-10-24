@@ -49,8 +49,7 @@ jobs:
 
       - name: Copy Files
         run: |
-          cd build || exit 1
-          cp -r exe/* release/
+          cp -r build/exe/* release/
 
       - name: Commit Changes
         env:
