@@ -24,7 +24,7 @@ var IPadPro = DeviceCfg{
 				"> div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper").Do(ctx)
 		},
 	},
-	BeforeClickLogin: chromedp.WaitReady("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action > a:nth-child(3)"),
+	BeforeClickLogin: chromedp.WaitReady("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action"),
 	ClickLogin:       chromedp.Click("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action > a:nth-child(3)"),
 	FetchLoginQrCode: func(ctx context.Context) (string, error) {
 		var qrcode string
