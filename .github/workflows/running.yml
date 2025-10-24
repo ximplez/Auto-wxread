@@ -42,6 +42,12 @@ jobs:
             chmod -R 777 wxread_linux_amd64
             ./wxread_linux_amd64 -t ${{ vars.TARGET_TIME }}
 
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@main
+        with:
+          retain_days: 3
+          keep_minimum_runs: 8
+
   keepalive-job:
     name: Keepalive Workflow
     if: ${{ always() }}
