@@ -41,7 +41,8 @@ jobs:
           BOOK_NAME: ${{ vars.BOOK_NAME }}
         with:
           timeout_minutes: 100
-          max_attempts: 3
+          max_attempts: 5
+          retry_wait_seconds: 10
           command: |
             chmod -R 777 wxread_linux_amd64
             ./wxread_linux_amd64 -t ${{ vars.TARGET_TIME }}
