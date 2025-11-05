@@ -39,6 +39,7 @@ func loadCookies() chromedp.ActionFunc {
 			}
 		}
 		if cookies != "" {
+			log.Printf("🍪 发现cookies,开始加载")
 			cookiesParams := json_tool.PhaseJsonFromString[network.SetCookiesParams](cookies)
 			// 设置cookies
 			return network.SetCookies(cookiesParams.Cookies).Do(ctx)

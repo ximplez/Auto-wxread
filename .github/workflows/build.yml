@@ -43,9 +43,14 @@ jobs:
           path: release
 
       - run: go install github.com/mitchellh/gox@latest # 安装 gox
-      - name: Build
+      - name: Build Auto-wxread
         run: |
           cd build || exit 1
+          make build-linux-amd64
+
+      - name: Build Auto-bot
+        run: |
+          cd build/auto_bot || exit 1
           make build-linux-amd64
 
       - name: Copy Files
