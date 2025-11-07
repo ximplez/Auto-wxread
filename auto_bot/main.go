@@ -94,23 +94,13 @@ func stat(ctx context.Context) (e error) {
 	// 将时间转换为日期字符串进行比较
 	nowDateStr := now.Format("2006-01-02")
 	yesterdayDateStr := yesterday.Format("2006-01-02")
+	totalReadTime := int64(0)
 
 	for _, k := range ts {
 		v := statistic.ReadTimes[k]
+		totalReadTime += v
 		t := time.Unix(conv.Str2Int64(k), 0).In(loc)
-		hours := v / 3600
-		minutes := (v % 3600) / 60
-		seconds := v % 60
-		timeStr := ""
-		if hours > 0 {
-			timeStr += fmt.Sprintf("%d 小时 ", hours)
-		}
-		if minutes > 0 {
-			timeStr += fmt.Sprintf("%d 分钟 ", minutes)
-		}
-		if seconds > 0 {
-			timeStr += fmt.Sprintf("%d 秒", seconds)
-		}
+		timeStr := fmtTime(v)
 
 		// 将t转换为日期字符串进行比较
 		tDateStr := t.Format("2006-01-02")
@@ -126,10 +116,25 @@ func stat(ctx context.Context) (e error) {
 	%s（%s）：%s`, t.Format("2006-01-02"), utils.FormatWeekdayCN(t), notify.OrangeText(timeStr))
 		}
 	}
-	msg := notify.BoldText(fmt.Sprintf(`📊 本周共阅读 %s:%s`, notify.BlueText(strconv.Itoa(statistic.ReadDays)+" 天"), s))
+	msg := notify.BoldText(fmt.Sprintf(`📊 本周阅读 %s:%s`, notify.BlueText(strconv.Itoa(statistic.ReadDays)+" 天，共 "+fmtTime(totalReadTime)), s))
 
 	notify.NotifyFeishu(feishuBotUrl, notify.NewFeishuMsg("微信读书", fmt.Sprintf("📊 %s 统计数据", nowDateStr), msg, ""))
 	return nil
+}
+
+func fmtTime(ts int64) string {
+	hours := ts / 3600
+	minutes := (ts % 3600) / 60
+	seconds := ts % 60
+	timeStr := ""
+	if hours > 0 {
+		timeStr += fmt.Sprintf("%d 小时 ", hours)
+	}
+	if minutes > 0 {
+		timeStr += fmt.Sprintf("%d 分钟 ", minutes)
+	}
+	timeStr += fmt.Sprintf("%d 秒", seconds)
+	return timeStr
 }
 
 // 自动每日抽奖

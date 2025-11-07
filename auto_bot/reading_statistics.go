@@ -11,8 +11,8 @@ import (
 
 type ReadingStatistic struct {
 	*ErrorResp
-	ReadTimes map[string]int `json:"readTimes"`
-	ReadDays  int            `json:"readDays"`
+	ReadTimes map[string]int64 `json:"readTimes"`
+	ReadDays  int              `json:"readDays"`
 }
 
 type ReadingStatisticService struct {
