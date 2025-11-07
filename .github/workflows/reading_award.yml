@@ -8,7 +8,7 @@ permissions:
   actions: write
 
 on:
-  schedule:
+#  schedule:
     # 午间任务：北京时间每天 14:04（UTC 6:04）
 #    - cron: '04 06 * * *'
     # 晚间任务：北京时间每天 20:07（UTC 12:07）
