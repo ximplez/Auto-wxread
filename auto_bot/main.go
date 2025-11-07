@@ -196,7 +196,7 @@ func readingReward(ctx context.Context) (e error) {
 			receivedNum += award.AwardChoices[0].AwardNum
 		}
 	}
-	log.Printf(fmt.Sprintf(`🎁 【阅读奖励】领取成功 %d 天体验卡`, receivedNum))
+	log.Print(fmt.Sprintf(`🎁 【阅读奖励】领取成功 %d 天体验卡`, receivedNum))
 	notify.NotifyFeishu(feishuBotUrl, notify.NewFeishuMsg("微信读书", "🎁 领取阅读奖励",
 		notify.BoldText(notify.PurpleText(fmt.Sprintf(`本次可领取 %d 天体验卡，领取成功 %d 天体验卡`, totalNum, receivedNum))), ""))
 	return nil

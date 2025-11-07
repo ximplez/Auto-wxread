@@ -36,8 +36,11 @@ func CreateOrUpdateGithubSecret(githubToken, repo, secretName, secretValue strin
 		KeyId:          keyId,
 	}, false), buildGithubHeader(githubToken)); err != nil {
 		return err
-	} else if r != "" {
-		return errors.New("上传secret失败：" + r)
+	} else {
+		resp := json_tool.PhaseJsonFromString[githubResp](r)
+		if resp == nil || resp.Status != "" {
+			return errors.New("上传secret失败：" + r)
+		}
 	}
 
 	return nil
@@ -63,4 +66,10 @@ func encryptSecretWithPublicKey(text, publicKey, keyId string) (string, error) {
 	encryptedBase64 := base64.StdEncoding.EncodeToString(encrypted)
 
 	return encryptedBase64, nil
+}
+
+type githubResp struct {
+	Message          string `json:"message"`
+	DocumentationUrl string `json:"documentation_url"`
+	Status           string `json:"status"`
 }
