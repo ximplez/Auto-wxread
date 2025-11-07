@@ -8,13 +8,13 @@ permissions:
   actions: write
 
 on:
-  schedule:
-    # 午间任务：北京时间每天 14:02（UTC 6:02）
-    - cron: '02 06 * * *'
-    # 晚间任务：北京时间每天 20:05（UTC 12:05）
-    - cron: '05 12 * * *'
-    # 晚间任务：北京时间每天 23:05（UTC 15:05）
-    - cron: '05 15 * * *'
+#  schedule:
+#    # 午间任务：北京时间每天 14:02（UTC 6:02）
+#    - cron: '02 06 * * *'
+#    # 晚间任务：北京时间每天 20:05（UTC 12:05）
+#    - cron: '05 12 * * *'
+#    # 晚间任务：北京时间每天 23:05（UTC 15:05）
+#    - cron: '05 15 * * *'
   workflow_dispatch:  # 手动触发
   repository_dispatch:
     types:
