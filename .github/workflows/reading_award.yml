@@ -38,7 +38,7 @@ jobs:
           FEISHU_BOT_URL: ${{ secrets.FEISHU_BOT_URL }}
         with:
           timeout_minutes: 1
-          max_attempts: 5
+          max_attempts: 2
           retry_wait_seconds: 5
           command: |
             chmod -R 777 wxread_bot_linux_amd64
@@ -52,7 +52,7 @@ jobs:
           FEISHU_BOT_URL: ${{ secrets.FEISHU_BOT_URL }}
         with:
           timeout_minutes: 1
-          max_attempts: 5
+          max_attempts: 2
           retry_wait_seconds: 5
           command: |
             chmod -R 777 wxread_bot_linux_amd64
