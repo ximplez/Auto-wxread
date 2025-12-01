@@ -37,6 +37,9 @@ func CreateOrUpdateGithubSecret(githubToken, repo, secretName, secretValue strin
 	}, false), buildGithubHeader(githubToken)); err != nil {
 		return err
 	} else {
+		if r == "" {
+			return nil
+		}
 		resp := json_tool.PhaseJsonFromString[githubResp](r)
 		if resp == nil || resp.Status != "" {
 			return errors.New("上传secret失败：" + r)

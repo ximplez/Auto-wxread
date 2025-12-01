@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -124,6 +123,7 @@ var IPadPro = DeviceCfg{
 		if err := chromedp.Evaluate("window.innerHeight", &height).Do(ctx); err != nil {
 			return err
 		}
+		st := time.Now()
 		for {
 			if err := chromedp.Evaluate("window.scrollY", &prey).Do(ctx); err != nil {
 				return err
@@ -147,6 +147,9 @@ var IPadPro = DeviceCfg{
 			if cury == prey {
 				break
 			}
+			if time.Now().Sub(st).Minutes() > 3 {
+				break
+			}
 		}
 		return nil
 	},
@@ -155,12 +158,10 @@ var IPadPro = DeviceCfg{
 	},
 	IsEndPage: func(ctx context.Context) (bool, error) {
 		var end bool
-		if err := chromedp.QueryAfter("#routerView > div > div.app_content > div.readerFooter", func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
+		if err := chromedp.QueryAfter("#routerView > div > div.app_content > div.readerFooter.readerFooter_last_page > div > button:nth-child(1)", func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
 			n := node[0]
-			if clz, ok := n.Attribute("class"); ok {
-				if strings.Contains(clz, "readerFooter_last_page") {
-					end = true
-				}
+			if attr, ok := n.Attribute("title"); ok && (attr != "下一页" && attr != "下一章") {
+				end = true
 			}
 			return nil
 		}).Do(ctx); err != nil {
