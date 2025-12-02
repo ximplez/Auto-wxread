@@ -1,4 +1,6 @@
 # Auto-wxread
+[![BuildWxread](https://github.com/ximplez/Auto-wxread/actions/workflows/build.yml/badge.svg)](https://github.com/ximplez/Auto-wxread/actions/workflows/build.yml)
+
 自动化的微信阅读打卡工具
 ## 项目介绍 📚
 本项目主要用于自动化的微信阅读打卡，通过模拟浏览器操作，实现自动登录、自动阅读等功能。
