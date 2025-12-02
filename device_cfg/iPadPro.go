@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -160,8 +161,10 @@ var IPadPro = DeviceCfg{
 		var end bool
 		if err := chromedp.QueryAfter("#routerView > div > div.app_content > div.readerFooter > div > button:nth-child(1)", func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
 			n := node[0]
-			if attr, ok := n.Attribute("title"); ok && (attr != "下一页" && attr != "下一章") {
-				end = true
+			for _, child := range n.Children {
+				if !(strings.Contains(child.NodeValue, "下一页") || strings.Contains(child.NodeValue, "下一章")) {
+					end = true
+				}
 			}
 			return nil
 		}).Do(ctx); err != nil {
