@@ -241,9 +241,10 @@ func renderLogin(ctx context.Context) error {
 	if qrcode, err := deviceCfg.FetchLoginQrCode(ctx); err != nil {
 		return err
 	} else {
+		qc := fmt.Sprintf("https://ximplez.github.io/base64-image-viewer/?target=%s", qrcode)
 		notify.NotifyFeishu(feishuBotUrl, notify.NewFeishuMsg("微信读书", "🍪扫码登录", "",
-			fmt.Sprintf("https://ximplez.github.io/base64-image-viewer/?target=%s", qrcode)))
-		log.Printf("🍪已发送登录二维码通知")
+			qc))
+		log.Printf("🍪已发送登录二维码【%s】", qc)
 	}
 	return nil
 }
