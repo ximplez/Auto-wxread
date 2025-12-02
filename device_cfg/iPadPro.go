@@ -158,7 +158,7 @@ var IPadPro = DeviceCfg{
 	},
 	IsEndPage: func(ctx context.Context) (bool, error) {
 		var end bool
-		if err := chromedp.QueryAfter("#routerView > div > div.app_content > div.readerFooter.readerFooter_last_page > div > button:nth-child(1)", func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
+		if err := chromedp.QueryAfter("#routerView > div > div.app_content > div.readerFooter > div > button:nth-child(1)", func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
 			n := node[0]
 			if attr, ok := n.Attribute("title"); ok && (attr != "下一页" && attr != "下一章") {
 				end = true
