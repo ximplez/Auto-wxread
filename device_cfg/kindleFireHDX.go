@@ -12,8 +12,9 @@ import (
 )
 
 var KindleFireHDX = DeviceCfg{
-	Device:        device.KindleFireHDX,
-	AfterNavigate: chromedp.WaitReady(`#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper`),
+	Device:           device.KindleFireHDX,
+	AfterNavigate:    chromedp.WaitReady(`#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper`),
+	DoubleCheckLogin: func(ctx context.Context) (bool, error) { return true, nil },
 	BeforeClickLogin: chromedp.WaitReady("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper " +
 		"> div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action > a:nth-child(3)"),
 	ClickLogin: chromedp.Click("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper " +

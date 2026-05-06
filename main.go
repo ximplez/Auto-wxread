@@ -186,7 +186,11 @@ func isLogin(ctx context.Context) (bool, error) {
 			vid = true
 		}
 	}
-	return false, err
+	if check, err := deviceCfg.DoubleCheckLogin(ctx); err != nil {
+		return false, err
+	} else {
+		return check, nil
+	}
 }
 
 func doLogin() chromedp.ActionFunc {

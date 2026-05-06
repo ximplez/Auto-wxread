@@ -20,9 +20,27 @@ var IPadPro = DeviceCfg{
 			if err := clean.Do(ctx); err != nil {
 				return err
 			}
+			if err := chromedp.Sleep(5 * time.Second).Do(ctx); err != nil {
+				return err
+			}
 			return chromedp.WaitReady("#__nuxt > div > div > div > div.wr_index_page_content_wrapper " +
 				"> div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper").Do(ctx)
 		},
+	},
+	DoubleCheckLogin: func(ctx context.Context) (bool, error) {
+		var hasLogin = false
+		if err := chromedp.QueryAfter("#__nuxt > div > div > div > div.wr_index_page_content_wrapper > div.wr_index_page_top_section_wrapper > div.wr_index_page_top_section_header_wrapper > div.wr_index_page_top_section_header_action",
+			func(ctx context.Context, id runtime.ExecutionContextID, node ...*cdp.Node) error {
+				for _, child := range node[0].Children {
+					if strings.Contains(child.AttributeValue("class"), "avatar") {
+						hasLogin = true
+					}
+				}
+				return nil
+			}).Do(ctx); err != nil {
+			return hasLogin, err
+		}
+		return hasLogin, nil
 	},
 	BeforeClickLogin: &doQueryAction{
 		do: func(ctx context.Context) error {

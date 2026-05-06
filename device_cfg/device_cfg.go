@@ -12,6 +12,7 @@ import (
 type DeviceCfg struct {
 	chromedp.Device
 	AfterNavigate        chromedp.QueryAction
+	DoubleCheckLogin     func(ctx context.Context) (bool, error)
 	BeforeClickLogin     chromedp.QueryAction
 	ClickLogin           chromedp.QueryAction
 	FetchLoginQrCode     func(ctx context.Context) (string, error)
