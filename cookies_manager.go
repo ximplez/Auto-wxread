@@ -41,6 +41,21 @@ func loadCookies() chromedp.ActionFunc {
 		if cookies != "" {
 			log.Printf("🍪 发现cookies,开始加载")
 			cookiesParams := json_tool.PhaseJsonFromString[network.SetCookiesParams](cookies)
+			var vid, skey bool
+			for _, cookie := range cookiesParams.Cookies {
+				if vid && skey {
+					break
+				}
+				if cookie.Name == "wr_skey" && cookie.Value != "" {
+					skey = true
+				}
+				if cookie.Name == "wr_vid" && cookie.Value != "" {
+					vid = true
+				}
+			}
+			if !vid || !skey {
+				log.Printf("❗❗❗ cookies 未包含关键信息: %v", cookies)
+			}
 			// 设置cookies
 			return network.SetCookies(cookiesParams.Cookies).Do(ctx)
 		}
