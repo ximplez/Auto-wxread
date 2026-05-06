@@ -170,22 +170,40 @@ func login() chromedp.ActionFunc {
 }
 
 func isLogin(ctx context.Context) (bool, error) {
-	cookies, err := network.GetCookies().Do(ctx)
+	cs, err := network.GetCookies().Do(ctx)
 	if err != nil {
 		return false, err
 	}
-	var vid, skey bool
-	for _, cookie := range cookies {
-		if vid && skey {
-			return true, nil
+	var hasVid, hasSkey, vid, skey bool
+	retryCount := 0
+	for (!hasVid || !hasSkey) && retryCount < 10 {
+		for _, cookie := range cs {
+			if vid && skey {
+				return true, nil
+			}
+			if cookie.Name == "wr_skey" {
+				hasSkey = true
+				if cookie.Value != "" {
+					skey = true
+				}
+			}
+			if cookie.Name == "wr_vid" {
+				hasVid = true
+				if cookie.Value != "" {
+					vid = true
+				}
+			}
 		}
-		if cookie.Name == "wr_skey" && cookie.Value != "" {
-			skey = true
+		retryCount++
+		if err = chromedp.Sleep(2 * time.Second).Do(ctx); err != nil {
+			return false, err
 		}
-		if cookie.Name == "wr_vid" && cookie.Value != "" {
-			vid = true
-		}
+		log.Printf("%v... Cookies 加载失败", retryCount)
 	}
+	if !hasVid || !hasSkey {
+		log.Printf("❌ Cookies 加载失败! C: %v", cookies)
+	}
+
 	if check, err := deviceCfg.DoubleCheckLogin(ctx); err != nil {
 		return false, err
 	} else {
