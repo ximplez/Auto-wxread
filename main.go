@@ -170,13 +170,13 @@ func login() chromedp.ActionFunc {
 }
 
 func isLogin(ctx context.Context) (bool, error) {
-	cs, err := network.GetCookies().Do(ctx)
-	if err != nil {
-		return false, err
-	}
 	var hasVid, hasSkey, vid, skey bool
 	retryCount := 0
 	for (!hasVid || !hasSkey) && retryCount < 10 {
+		cs, err := network.GetCookies().Do(ctx)
+		if err != nil {
+			return false, err
+		}
 		for _, cookie := range cs {
 			if vid && skey {
 				return true, nil
