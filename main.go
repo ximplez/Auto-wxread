@@ -105,7 +105,7 @@ func accessWeb() error {
 func end() {
 	finishedText := ""
 	if finishedBook {
-		finishedText = notify.RedText("全书阅读完毕") + " 🎉🎉🎉"
+		finishedText = "全书阅读完毕" + " 🎉🎉🎉"
 	}
 	atc := 0
 	if totalReadPageCnt == 0 {
@@ -118,15 +118,15 @@ func end() {
 		catalogStr = fmt.Sprintf(`
 	当前章节: %s
 	当前进度: %s
-`, notify.BoldText(notify.BlueText(curCatalog.CurCatalog())), notify.BoldText(notify.OrangeText(curCatalog.CurProgress())))
+`, curCatalog.CurCatalog(), curCatalog.CurProgress())
 	}
 	summary := fmt.Sprintf(`📕书名: %s %s
 	本次阅读时间: %s
 	本次阅读页数: %s 页
 	本次平均阅读时间: %s 秒
-阅读进度: %s`, notify.BoldText(notify.PurpleText(bookTitle)), finishedText,
-		notify.BoldText(notify.GreenText((time.Millisecond * time.Duration(totalReadTime)).String())), notify.BoldText(strconv.FormatInt(totalReadPageCnt, 10)),
-		notify.BoldText(strconv.FormatInt(int64(atc), 10)), catalogStr)
+阅读进度: %s`, bookTitle, finishedText,
+		(time.Millisecond * time.Duration(totalReadTime)).String(), strconv.FormatInt(totalReadPageCnt, 10),
+		strconv.FormatInt(int64(atc), 10), catalogStr)
 	log.Printf(summary)
 	notify.NotifyFeishu(feishuBotUrl, notify.NewFeishuMsg("微信读书", "🎉结束阅读", summary, ""))
 }
@@ -297,12 +297,12 @@ func startRead() chromedp.ActionFunc {
 			catalogInfoStr = fmt.Sprintf(`
 	当前章节: %s
 	当前进度: %s
-`, notify.BoldText(notify.BlueText(catalogInfo.CurCatalog())), notify.BoldText(notify.OrangeText(catalogInfo.CurProgress())))
+`, catalogInfo.CurCatalog(), catalogInfo.CurProgress())
 		}
 		log.Printf("✅ 开始阅读 %s", catalogInfoStr)
 		bar = progressbar.Default(-1, "阅读中...")
 		notify.NotifyFeishu(feishuBotUrl, notify.NewFeishuMsg("微信读书", "📕开始阅读", fmt.Sprintf("📕书名: %s，目标阅读时间: %v%s",
-			notify.PurpleText(notify.BoldText(bookTitle)), notify.GreenText(notify.BoldText(targetReadTime.String())), notify.BoldText(catalogInfoStr)), ""))
+			bookTitle, targetReadTime.String(), catalogInfoStr), ""))
 		startTime := time.Now()
 		defer func() {
 			endTime := time.Now()
