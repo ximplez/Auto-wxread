@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -25,8 +24,6 @@ var (
 	bookTitle string
 	// 目标阅读时间
 	targetReadTime time.Duration
-	// 飞书机器人通知链接
-	feishuBotUrl string
 	// cookies or cookies url
 	cookies string
 	// debug模式
@@ -41,12 +38,12 @@ var (
 	totalReadPageCnt int64
 	// 当前阅读章节
 	curCatalog *device_cfg.CatalogInfo
+	notifier   *notify.FeishuCardNotifier
 )
 
 const (
-	envCookiesKey   = "COOKIES"
-	envFeishuBotUrl = "FEISHU_BOT_URL"
-	envBookTitle    = "BOOK_NAME"
+	envCookiesKey = "COOKIES"
+	envBookTitle  = "BOOK_NAME"
 )
 
 func main() {
@@ -61,9 +58,10 @@ func main() {
 	}
 	bookTitle = env_utils.GetEnv(envBookTitle)
 	cookies = env_utils.GetEnv(envCookiesKey)
-	feishuBotUrl = env_utils.GetEnv(envFeishuBotUrl)
+	notifier = notify.NewFeishuCardNotifier(notify.NewCardConfigFromEnv(env_utils.GetEnv))
 	targetReadTime = time.Minute * time.Duration(*tt)
 	log.Printf("目标阅读时间: %s, 目标书名: %s", targetReadTime.String(), bookTitle)
+	notifyWxRead(notify.WxReadStatusStarting, wxReadState(0, "", "任务已创建，正在准备浏览器环境。"))
 
 	// 访问网页
 	err := accessWeb()
@@ -75,6 +73,7 @@ func main() {
 func accessWeb() error {
 	ctx, cancel := context.WithTimeout(context.Background(), targetReadTime)
 	defer cancel()
+	notifyWxRead(notify.WxReadStatusLoading, wxReadState(0, "", "正在打开微信读书并恢复 cookies。"))
 	err := tool_chromedp.AccessWebWithCtx(ctx, chromedp.Tasks{
 		// 设置设备模拟
 		chromedp.Emulate(deviceCfg.Device),
@@ -93,7 +92,10 @@ func accessWeb() error {
 			end()
 			return nil
 		}
-		notify.NotifyFeishu(feishuBotUrl, notify.NewFeishuMsg("微信读书", "❌ 阅读失败", err.Error(), ""))
+		if totalReadPageCnt > 0 || curCatalog != nil {
+			notifyWxRead(notify.WxReadStatusProgressWarning, wxReadState(0, err.Error(), "阅读过程中出现异常，已记录当前进度。"))
+		}
+		notifyWxRead(notify.WxReadStatusFailed, wxReadState(0, err.Error(), "任务已停止。"))
 		return err
 	}
 	if finishedBook {
@@ -105,7 +107,7 @@ func accessWeb() error {
 func end() {
 	finishedText := ""
 	if finishedBook {
-		finishedText = "全书阅读完毕" + " 🎉🎉🎉"
+		finishedText = "全书阅读完毕"
 	}
 	atc := 0
 	if totalReadPageCnt == 0 {
@@ -120,15 +122,14 @@ func end() {
 	当前进度: %s
 `, curCatalog.CurCatalog(), curCatalog.CurProgress())
 	}
-	summary := fmt.Sprintf(`📕书名: %s %s
-	本次阅读时间: %s
-	本次阅读页数: %s 页
-	本次平均阅读时间: %s 秒
+	summary := fmt.Sprintf(`书名: %s %s
+本次阅读时间: %s
+本次阅读页数: %d 页
+本次平均阅读时间: %d 秒
 阅读进度: %s`, bookTitle, finishedText,
-		(time.Millisecond * time.Duration(totalReadTime)).String(), strconv.FormatInt(totalReadPageCnt, 10),
-		strconv.FormatInt(int64(atc), 10), catalogStr)
-	log.Printf(summary)
-	notify.NotifyFeishu(feishuBotUrl, notify.NewFeishuMsg("微信读书", "🎉结束阅读", summary, ""))
+		(time.Millisecond * time.Duration(totalReadTime)).String(), totalReadPageCnt, atc, catalogStr)
+	log.Print(summary)
+	notifyWxRead(notify.WxReadStatusFinished, wxReadState(0, "", "阅读总结已生成。"))
 }
 func findBook() chromedp.ActionFunc {
 	return func(ctx context.Context) (err error) {
@@ -140,6 +141,7 @@ func findBook() chromedp.ActionFunc {
 			}
 			log.Printf("✅ 找到书: %s", book)
 			bookTitle = book
+			notifyWxRead(notify.WxReadStatusBookFound, wxReadState(0, "", "目标书籍已定位。"))
 		}
 		return nil
 	}
@@ -148,7 +150,11 @@ func findBook() chromedp.ActionFunc {
 func beforeRead() chromedp.ActionFunc {
 	return func(ctx context.Context) (err error) {
 		log.Printf("📕书名: %s，目标阅读时间: %v", bookTitle, targetReadTime.String())
-		return deviceCfg.BeforeRead(ctx)
+		if err := deviceCfg.BeforeRead(ctx); err != nil {
+			return err
+		}
+		notifyWxRead(notify.WxReadStatusReady, wxReadState(0, "", "阅读页加载完成。"))
+		return nil
 	}
 }
 
@@ -162,8 +168,10 @@ func login() chromedp.ActionFunc {
 			if err := doLogin().Do(ctx); err != nil {
 				return err
 			}
+			notifyWxRead(notify.WxReadStatusLoginSuccess, wxReadState(0, "", "扫码登录已完成。"))
 		} else {
 			log.Printf("✅ 已登录")
+			notifyWxRead(notify.WxReadStatusLoginSuccess, wxReadState(0, "", "cookies 登录态有效。"))
 		}
 		return
 	}
@@ -264,8 +272,7 @@ func renderLogin(ctx context.Context) error {
 		return err
 	} else {
 		qc := fmt.Sprintf("https://ximplez.github.io/base64-image-viewer/?target=%s", qrcode)
-		notify.NotifyFeishu(feishuBotUrl, notify.NewFeishuMsg("微信读书", "🍪扫码登录", "",
-			qc))
+		notifyWxRead(notify.WxReadStatusLoginRequired, wxReadStateWithQRCode(qc, "请打开二维码完成微信读书登录。"))
 		log.Printf("🍪已发送登录二维码【%s】", qc)
 	}
 	return nil
@@ -301,9 +308,8 @@ func startRead() chromedp.ActionFunc {
 		}
 		log.Printf("✅ 开始阅读 %s", catalogInfoStr)
 		bar = progressbar.Default(-1, "阅读中...")
-		notify.NotifyFeishu(feishuBotUrl, notify.NewFeishuMsg("微信读书", "📕开始阅读", fmt.Sprintf("📕书名: %s，目标阅读时间: %v%s",
-			bookTitle, targetReadTime.String(), catalogInfoStr), ""))
 		startTime := time.Now()
+		notifyWxRead(notify.WxReadStatusReading, wxReadState(time.Since(startTime), "", "阅读已开始。"))
 		defer func() {
 			endTime := time.Now()
 			totalReadTime = endTime.UnixMilli() - startTime.UnixMilli()
@@ -316,27 +322,74 @@ func startRead() chromedp.ActionFunc {
 		}()
 		for {
 			if err := deviceCfg.StartRead(ctx); err != nil {
+				notifyWxRead(notify.WxReadStatusProgressWarning, wxReadState(time.Since(startTime), err.Error(), "章节阅读动作异常。"))
 				return err
 			}
 			if end, err := deviceCfg.IsEndPage(ctx); err != nil {
+				notifyWxRead(notify.WxReadStatusProgressWarning, wxReadState(time.Since(startTime), err.Error(), "检查是否到达末页时异常。"))
 				return err
 			} else if end {
 				finishedBook = true
 				break
 			}
 			if err := deviceCfg.NextPage(ctx); err != nil {
+				notifyWxRead(notify.WxReadStatusProgressWarning, wxReadState(time.Since(startTime), err.Error(), "翻到下一页时异常。"))
 				return err
 			}
 			if catalogInfo, err := deviceCfg.GetCatalogInfo(ctx); err != nil {
+				notifyWxRead(notify.WxReadStatusProgressWarning, wxReadState(time.Since(startTime), err.Error(), "读取章节进度时异常。"))
 				return err
 			} else {
 				curCatalog = catalogInfo
 			}
 			totalReadPageCnt++
+			notifyWxReadProgress(wxReadState(time.Since(startTime), "", "阅读仍在进行中。"))
 			if err := bar.Add(1); err != nil {
 				log.Printf("progress err. %v", err)
 			}
 		}
 		return nil
 	}
+}
+
+func notifyWxRead(status notify.WxReadStatus, state notify.WxReadCardState) {
+	if notifier == nil {
+		return
+	}
+	notifier.Upsert(notify.BuildWxReadCard(status, state))
+}
+
+func notifyWxReadProgress(state notify.WxReadCardState) {
+	if notifier == nil {
+		return
+	}
+	notifier.NotifyProgress(notify.BuildWxReadCard(notify.WxReadStatusReading, state))
+}
+
+func wxReadState(readTime time.Duration, errText, detail string) notify.WxReadCardState {
+	catalogName, catalogProgress := "", ""
+	if curCatalog != nil {
+		catalogName = curCatalog.CurCatalog()
+		catalogProgress = curCatalog.CurProgress()
+	}
+	if readTime <= 0 && totalReadTime > 0 {
+		readTime = time.Millisecond * time.Duration(totalReadTime)
+	}
+	return notify.WxReadCardState{
+		BookTitle:        bookTitle,
+		TargetReadTime:   targetReadTime,
+		TotalReadTime:    readTime,
+		TotalReadPageCnt: totalReadPageCnt,
+		CatalogName:      catalogName,
+		CatalogProgress:  catalogProgress,
+		FinishedBook:     finishedBook,
+		Error:            errText,
+		Detail:           detail,
+	}
+}
+
+func wxReadStateWithQRCode(qrcodeURL, detail string) notify.WxReadCardState {
+	state := wxReadState(0, "", detail)
+	state.QRCodeURL = qrcodeURL
+	return state
 }

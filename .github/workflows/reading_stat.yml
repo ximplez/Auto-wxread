@@ -35,7 +35,7 @@ jobs:
         env:
           VID: ${{ secrets.VID }}
           SKEY: ${{ secrets.SKEY }}
-          FEISHU_BOT_URL: ${{ secrets.FEISHU_BOT_URL }}
+          NOTIFICATION_CONFIG_JSON: ${{ secrets.NOTIFICATION_CONFIG_JSON }}
         with:
           timeout_minutes: 1
           max_attempts: 2

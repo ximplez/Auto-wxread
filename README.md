@@ -15,11 +15,32 @@
 **GitHub Action部署运行（GitHub运行）**
 1. fork 本项目。
 2. **设置Repository secrets**：仓库 Settings -> 左侧列表中的 Secrets and variables -> Actions，然后在右侧的 Repository secrets 中添加如下值
-   - `FEISHU_BOT_URL`：飞书机器人通知链接(推荐配置此webhook链接，接收登录二维码链接、阅读进度通知等)
+   - `NOTIFICATION_CONFIG_JSON`：飞书卡片通知配置 JSON。为空时关闭通知；程序会调用 feishu_bot_gateway 的 `/send_card` 接口
    - `PAT`：GitHub PAT Token（用于上传cookies到GitHub），需要具备repo secret写权限
 3. **设置Repository variables**：仓库 Settings -> 左侧列表中的 Secrets and variables -> Actions，然后在左侧的 Repository Variables 中添加如下值
-   - `TARGET_READ_TIME`：目标阅读时间(分钟)
-   - `BOOK_TITLE`：目标书名（可以为空，默认选择最近读的书）
+   - `TARGET_TIME`：目标阅读时间(分钟)
+   - `BOOK_NAME`：目标书名（可以为空，默认选择最近读的书）
+
+飞书通知已切换为模板卡片通知。任务开始时会发送一张卡片，登录二维码、选书、阅读进度、异常、失败和完成总结都会通过 feishu_bot_gateway 的卡片更新能力更新到同一条消息中，减少刷屏并保留完整执行状态。
+
+`NOTIFICATION_CONFIG_JSON` 示例：
+
+```json
+{
+  "enabled": true,
+  "gatewayBaseUrl": "https://your-worker.example.workers.dev",
+  "gatewayAuthToken": "your-gateway-token",
+  "appId": "cli_xxx",
+  "templateId": "ctp_xxx",
+  "templateVersionName": "1.0.0",
+  "receiveIdType": "email",
+  "receiveId": "name@example.com",
+  "appName": "微信读书",
+  "openId": "",
+  "defaultUrl": "https://weread.qq.com/",
+  "progressNotifySeconds": 60
+}
+```
 
 ## 后续计划 📆
 - [x] 支持登录后自动保存cookies

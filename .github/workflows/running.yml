@@ -37,7 +37,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT }}
           WXREAD_REPO: ${{ github.repository }}
           COOKIES: ${{ secrets.COOKIES }}
-          FEISHU_BOT_URL: ${{ secrets.FEISHU_BOT_URL }}
+          NOTIFICATION_CONFIG_JSON: ${{ secrets.NOTIFICATION_CONFIG_JSON }}
           BOOK_NAME: ${{ vars.BOOK_NAME }}
         with:
           timeout_minutes: 100
