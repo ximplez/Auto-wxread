@@ -1,13 +1,13 @@
 module github.com/ximplez/wxread
 
-go 1.24.7
+go 1.25.0
 
 require (
 	github.com/chromedp/cdproto v0.0.0-20250403032234-65de8f5d025b
 	github.com/chromedp/chromedp v0.13.6
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/ximplez-go/gf v1.0.0-beta.1
-	golang.org/x/crypto v0.45.0
+	golang.org/x/crypto v0.51.0
 )
 
 require (
@@ -24,9 +24,9 @@ require (
 	github.com/magiconair/properties v1.8.9 // indirect
 	go.opentelemetry.io/otel v1.32.0 // indirect
 	go.opentelemetry.io/otel/trace v1.32.0 // indirect
-	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
