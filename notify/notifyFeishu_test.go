@@ -128,3 +128,19 @@ func TestNewCardConfigFromEnvMissingFieldsStaysEnabledForErrorLog(t *testing.T) 
 		t.Fatal("validate() err = nil, want missing field error")
 	}
 }
+
+func TestTemplateVariableNormalizesEmptyMainButtonEvent(t *testing.T) {
+	card := BuildWxReadCard(WxReadStatusStarting, WxReadCardState{
+		BookTitle:      "测试书籍",
+		TargetReadTime: DefaultProgressNotifyEvery,
+	})
+	vars := card.toTemplateVariable()
+
+	event, ok := vars["main_button_event"].(map[string]any)
+	if !ok {
+		t.Fatalf("main_button_event = %T, want object", vars["main_button_event"])
+	}
+	if event["action"] != "noop" {
+		t.Fatalf("main_button_event.action = %v, want noop", event["action"])
+	}
+}

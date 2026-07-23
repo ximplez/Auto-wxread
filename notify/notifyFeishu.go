@@ -54,7 +54,7 @@ type CardMessage struct {
 	Foot               string
 	MainButtonText     string
 	MainButtonDisabled bool
-	MainButtonEvent    string
+	MainButtonEvent    any
 	SubButtonText      string
 	SubButtonDisabled  bool
 	SubButtonURL       string
@@ -467,8 +467,8 @@ func (m CardMessage) toTemplateVariable() map[string]any {
 		"mainButtonText":    m.MainButtonText,
 		"main_button":       m.MainButtonDisabled,
 		"mainButton":        m.MainButtonDisabled,
-		"main_button_event": m.MainButtonEvent,
-		"mainButtonEvent":   m.MainButtonEvent,
+		"main_button_event": normalizeMainButtonEvent(m.MainButtonEvent),
+		"mainButtonEvent":   normalizeMainButtonEvent(m.MainButtonEvent),
 		"sub_button_text":   m.SubButtonText,
 		"subButtonText":     m.SubButtonText,
 		"sub_button":        m.SubButtonDisabled || m.SubButtonURL == "",
@@ -584,6 +584,49 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func normalizeMainButtonEvent(value any) any {
+	if isEmptyMainButtonEvent(value) {
+		return map[string]any{
+			"action": "noop",
+			"source": "wxread",
+		}
+	}
+	switch v := value.(type) {
+	case json.Number, float64, bool, map[string]any, []any:
+		return v
+	case string:
+		trimmed := strings.TrimSpace(v)
+		if trimmed == "" {
+			return map[string]any{
+				"action": "noop",
+				"source": "wxread",
+			}
+		}
+		var parsed any
+		decoder := json.NewDecoder(strings.NewReader(trimmed))
+		decoder.UseNumber()
+		if err := decoder.Decode(&parsed); err == nil {
+			return parsed
+		}
+		return map[string]any{
+			"action": trimmed,
+			"source": "wxread",
+		}
+	default:
+		return v
+	}
+}
+
+func isEmptyMainButtonEvent(value any) bool {
+	if value == nil {
+		return true
+	}
+	if text, ok := value.(string); ok {
+		return strings.TrimSpace(text) == ""
+	}
+	return false
 }
 
 func parseProgressNotifyEvery(value any) time.Duration {

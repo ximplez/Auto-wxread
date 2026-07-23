@@ -38,8 +38,17 @@ var (
 	totalReadPageCnt int64
 	// 当前阅读章节
 	curCatalog *device_cfg.CatalogInfo
-	notifier   *notify.FeishuCardNotifier
+	notifier   wxReadNotifier
+
+	accessWebWithCtx = tool_chromedp.AccessWebWithCtx
+	checkLogin       = isLogin
+	doLoginAction    = doLogin
 )
+
+type wxReadNotifier interface {
+	Upsert(notify.CardMessage)
+	NotifyProgress(notify.CardMessage)
+}
 
 const (
 	envCookiesKey = "COOKIES"
@@ -74,7 +83,7 @@ func accessWeb() error {
 	ctx, cancel := context.WithTimeout(context.Background(), targetReadTime)
 	defer cancel()
 	notifyWxRead(notify.WxReadStatusLoading, wxReadState(0, "", "正在打开微信读书并恢复 cookies。"))
-	err := tool_chromedp.AccessWebWithCtx(ctx, chromedp.Tasks{
+	err := accessWebWithCtx(ctx, chromedp.Tasks{
 		// 设置设备模拟
 		chromedp.Emulate(deviceCfg.Device),
 		loadCookies(),
@@ -161,11 +170,11 @@ func beforeRead() chromedp.ActionFunc {
 // 检查是否登陆
 func login() chromedp.ActionFunc {
 	return func(ctx context.Context) (err error) {
-		if ok, err := isLogin(ctx); err != nil {
+		if ok, err := checkLogin(ctx); err != nil {
 			return err
 		} else if !ok {
 			log.Printf("❌ 未登录")
-			if err := doLogin().Do(ctx); err != nil {
+			if err := doLoginAction().Do(ctx); err != nil {
 				return err
 			}
 			notifyWxRead(notify.WxReadStatusLoginSuccess, wxReadState(0, "", "扫码登录已完成。"))
