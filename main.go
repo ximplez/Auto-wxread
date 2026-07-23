@@ -11,7 +11,6 @@ import (
 
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
-	"github.com/schollz/progressbar/v3"
 	tool_chromedp "github.com/ximplez/wxread/chromedp"
 	"github.com/ximplez/wxread/device_cfg"
 	"github.com/ximplez/wxread/notify"
@@ -29,7 +28,6 @@ var (
 	// debug模式
 	debug bool
 
-	bar          *progressbar.ProgressBar
 	deviceCfg    = device_cfg.IPadPro
 	finishedBook bool
 	// 最终阅读时间
@@ -316,18 +314,11 @@ func startRead() chromedp.ActionFunc {
 `, catalogInfo.CurCatalog(), catalogInfo.CurProgress())
 		}
 		log.Printf("✅ 开始阅读 %s", catalogInfoStr)
-		bar = progressbar.Default(-1, "阅读中...")
 		startTime := time.Now()
 		notifyWxRead(notify.WxReadStatusReading, wxReadState(time.Since(startTime), "", "阅读已开始。"))
 		defer func() {
 			endTime := time.Now()
 			totalReadTime = endTime.UnixMilli() - startTime.UnixMilli()
-			if err := bar.Finish(); err != nil {
-				log.Printf("progress err. %v", err)
-			}
-			if err := bar.Exit(); err != nil {
-				log.Printf("progress err. %v", err)
-			}
 		}()
 		for {
 			if err := deviceCfg.StartRead(ctx); err != nil {
@@ -353,9 +344,6 @@ func startRead() chromedp.ActionFunc {
 			}
 			totalReadPageCnt++
 			notifyWxReadProgress(wxReadState(time.Since(startTime), "", "阅读仍在进行中。"))
-			if err := bar.Add(1); err != nil {
-				log.Printf("progress err. %v", err)
-			}
 		}
 		return nil
 	}

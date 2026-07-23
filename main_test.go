@@ -33,7 +33,6 @@ func resetWxReadTestState(t *testing.T) *recordNotifier {
 	oldTargetReadTime := targetReadTime
 	oldCookies := cookies
 	oldDebug := debug
-	oldBar := bar
 	oldDeviceCfg := deviceCfg
 	oldFinishedBook := finishedBook
 	oldTotalReadTime := totalReadTime
@@ -49,7 +48,6 @@ func resetWxReadTestState(t *testing.T) *recordNotifier {
 	targetReadTime = time.Minute
 	cookies = ""
 	debug = false
-	bar = nil
 	deviceCfg = device_cfg.IPadPro
 	finishedBook = false
 	totalReadTime = 0
@@ -73,7 +71,6 @@ func resetWxReadTestState(t *testing.T) *recordNotifier {
 		targetReadTime = oldTargetReadTime
 		cookies = oldCookies
 		debug = oldDebug
-		bar = oldBar
 		deviceCfg = oldDeviceCfg
 		finishedBook = oldFinishedBook
 		totalReadTime = oldTotalReadTime
