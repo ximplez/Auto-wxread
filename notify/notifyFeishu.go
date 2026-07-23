@@ -493,20 +493,20 @@ func buildWxReadContent(state WxReadCardState) string {
 		fmt.Sprintf("**书名**：%s", state.BookTitle),
 		fmt.Sprintf("**目标阅读**：%s", formatDuration(state.TargetReadTime)),
 	}
-	if state.TotalReadTime > 0 {
-		lines = append(lines, fmt.Sprintf("**已读时长**：%s", formatDuration(state.TotalReadTime)))
-	}
 	if state.TotalReadPageCnt > 0 {
-		lines = append(lines, fmt.Sprintf("**累计翻页/章节**：%d", state.TotalReadPageCnt))
+		lines = append(lines, fmt.Sprintf("**本次已读页数**：%d 页", state.TotalReadPageCnt))
+	}
+	if state.TotalReadTime > 0 {
+		lines = append(lines, fmt.Sprintf("**本次已读时长**：%s", formatDuration(state.TotalReadTime)))
 	}
 	if state.CatalogName != "" {
 		lines = append(lines, fmt.Sprintf("**当前章节**：%s", state.CatalogName))
 	}
 	if state.CatalogProgress != "" {
-		lines = append(lines, fmt.Sprintf("**目录进度**：%s", state.CatalogProgress))
+		lines = append(lines, fmt.Sprintf("**总进度**：%s", state.CatalogProgress))
 	}
 	if state.TargetReadTime > 0 && state.TotalReadTime > 0 {
-		lines = append(lines, fmt.Sprintf("**目标完成度**：%s", progressText(state.TotalReadTime, state.TargetReadTime)))
+		lines = append(lines, fmt.Sprintf("**本次目标完成度**：%s", progressText(state.TotalReadTime, state.TargetReadTime)))
 	}
 	if state.TotalReadPageCnt > 0 && state.TotalReadTime > 0 {
 		avg := state.TotalReadTime / time.Duration(state.TotalReadPageCnt)

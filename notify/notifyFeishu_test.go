@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -78,6 +79,29 @@ func TestBuildWxReadLoginCardUsesQRCodeButton(t *testing.T) {
 	}
 	if got := vars["title_style"]; got != "orange" {
 		t.Fatalf("title_style = %v, want orange", got)
+	}
+}
+
+func TestBuildWxReadReadingCardIncludesProgressSummary(t *testing.T) {
+	card := BuildWxReadCard(WxReadStatusReading, WxReadCardState{
+		BookTitle:        "测试书籍",
+		TargetReadTime:   time.Hour,
+		TotalReadTime:    15 * time.Minute,
+		TotalReadPageCnt: 12,
+		CatalogName:      "第一章",
+		CatalogProgress:  "25.00% (1/4)",
+	})
+
+	for _, want := range []string{
+		"**本次已读页数**：12 页",
+		"**本次已读时长**：15分0秒",
+		"**当前章节**：第一章",
+		"**总进度**：25.00% (1/4)",
+		"**本次目标完成度**：",
+	} {
+		if !strings.Contains(card.Content, want) {
+			t.Fatalf("card.Content missing %q:\n%s", want, card.Content)
+		}
 	}
 }
 
