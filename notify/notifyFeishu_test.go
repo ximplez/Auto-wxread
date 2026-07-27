@@ -157,11 +157,31 @@ func TestBuildWxReadReadingCardIncludesProgressSummary(t *testing.T) {
 	})
 
 	for _, want := range []string{
-		"**本次已读页数**：12 页",
-		"**本次已读时长**：15分0秒",
-		"**当前章节**：第一章",
-		"**总进度**：25.00% (1/4)",
-		"**本次目标完成度**：",
+		"🟡 **状态**：<font color='grey'>阅读中</font>",
+		"📄 **已读**：12 页",
+		"⏱️ **时长**：15分0秒",
+		"📌 **章节**：第一章",
+		"📊 **总进度**：25.00% (1/4)",
+		"🎯 **目标**：",
+	} {
+		if !strings.Contains(card.Content, want) {
+			t.Fatalf("card.Content missing %q:\n%s", want, card.Content)
+		}
+	}
+}
+
+func TestBuildWxReadFailedCardKeepsErrorSummaryOnly(t *testing.T) {
+	card := BuildWxReadCard(WxReadStatusFailed, WxReadCardState{
+		BookTitle:      "测试书籍",
+		TargetReadTime: time.Hour,
+		Error:          "chrome failed to start",
+		Detail:         "任务已停止。",
+	})
+
+	for _, want := range []string{
+		"🔴 **状态**：<font color='red'>阅读失败</font>",
+		"⚠️ **异常**：chrome failed to start",
+		"💬 **提示**：任务已停止。",
 	} {
 		if !strings.Contains(card.Content, want) {
 			t.Fatalf("card.Content missing %q:\n%s", want, card.Content)

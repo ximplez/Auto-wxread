@@ -312,8 +312,8 @@ func (n *FeishuCardNotifier) logDisabledOnce(err error) {
 
 func BuildWxReadCard(status WxReadStatus, state WxReadCardState) CardMessage {
 	state = state.normalize()
-	content := buildWxReadContent(state)
-	foot := "后续登录、选书、阅读进度和最终结果都会持续更新在这张卡片。"
+	content := buildWxReadContent(status, state)
+	foot := "状态会持续更新在这张卡片。"
 	card := CardMessage{
 		AppName:            DefaultWxReadAppName,
 		Title:              "阅读任务准备开始",
@@ -335,12 +335,12 @@ func BuildWxReadCard(status WxReadStatus, state WxReadCardState) CardMessage {
 		card.Title = "正在加载微信读书"
 		card.SubTitle = "浏览器已启动，正在恢复登录态"
 		card.TitleStyle = "blue"
-		card.Foot = "正在打开页面并校验 cookies，若登录态失效会自动推送扫码入口。"
+		card.Foot = "如需扫码，会在这张卡片中展示二维码。"
 	case WxReadStatusLoginRequired:
 		card.Title = "需要扫码登录"
 		card.SubTitle = "登录态已失效，请打开二维码完成确认"
 		card.TitleStyle = "orange"
-		card.Foot = "二维码失效后会自动刷新并更新这张卡片。登录完成后阅读任务会继续执行。"
+		card.Foot = "扫码后会继续阅读任务。"
 		card.MainButtonText = "等待扫码"
 		card.SubButtonText = "打开登录二维码"
 		card.SubButtonURL = state.QRCodeURL
@@ -349,33 +349,33 @@ func BuildWxReadCard(status WxReadStatus, state WxReadCardState) CardMessage {
 		card.Title = "登录成功"
 		card.SubTitle = "正在查找目标书籍"
 		card.TitleStyle = "turquoise"
-		card.Foot = "登录态已确认，接下来会进入书架并定位目标书籍。"
+		card.Foot = "正在继续查找目标书籍。"
 	case WxReadStatusBookFound:
 		card.Title = "已找到书籍"
 		card.SubTitle = state.BookTitle
 		card.TitleStyle = "blue"
-		card.Foot = "已进入目标书籍，正在准备阅读页。"
+		card.Foot = "正在准备阅读页。"
 	case WxReadStatusReady:
 		card.Title = "阅读页已就绪"
 		card.SubTitle = state.BookTitle
 		card.TitleStyle = "blue"
-		card.Foot = "即将开始模拟阅读，后续会按节奏更新当前章节和累计阅读数据。"
+		card.Foot = "即将开始阅读。"
 	case WxReadStatusReading:
 		card.Title = "阅读进行中"
 		card.SubTitle = readingSubtitle(state)
 		card.TitleStyle = "wathet"
-		card.Foot = "阅读任务仍在执行。卡片会按时间间隔和关键状态变化更新，避免消息刷屏。"
+		card.Foot = "按配置间隔更新进度。"
 	case WxReadStatusProgressWarning:
 		card.Title = "阅读进度异常"
-		card.SubTitle = "已记录当前进度，正在收敛异常"
+		card.SubTitle = "已记录异常摘要"
 		card.TitleStyle = "orange"
-		card.Foot = "程序会继续尝试或进入失败收敛；当前章节、页数和错误信息已保留在卡片中。"
+		card.Foot = "详细页面信息请查看运行日志。"
 		card.MainButtonText = "检查中"
 	case WxReadStatusFailed:
 		card.Title = "阅读失败"
 		card.SubTitle = "任务已停止"
 		card.TitleStyle = "red"
-		card.Foot = "请检查登录态、页面结构、网络和 GitHub Secrets 配置。"
+		card.Foot = "请查看运行日志。"
 		card.MainButtonText = "已失败"
 	case WxReadStatusFinished:
 		card.Title = "阅读完成"
@@ -385,7 +385,7 @@ func BuildWxReadCard(status WxReadStatus, state WxReadCardState) CardMessage {
 			card.SubTitle = "已达到本次目标阅读时长"
 		}
 		card.TitleStyle = "green"
-		card.Foot = "本次任务已结束，卡片不会继续更新。"
+		card.Foot = "本次任务已结束。"
 		card.MainButtonText = "已完成"
 	}
 	return card
@@ -520,40 +520,94 @@ func (s WxReadCardState) normalize() WxReadCardState {
 	return s
 }
 
-func buildWxReadContent(state WxReadCardState) string {
+func buildWxReadContent(status WxReadStatus, state WxReadCardState) string {
 	lines := []string{
-		fmt.Sprintf("**书名**：%s", state.BookTitle),
-		fmt.Sprintf("**目标阅读**：%s", formatDuration(state.TargetReadTime)),
+		fmt.Sprintf("%s **状态**：%s", wxReadStatusEmoji(status), wxReadStatusText(status)),
+		fmt.Sprintf("📖 **书籍**：%s", state.BookTitle),
 	}
 	if state.TotalReadPageCnt > 0 {
-		lines = append(lines, fmt.Sprintf("**本次已读页数**：%d 页", state.TotalReadPageCnt))
+		lines = append(lines, fmt.Sprintf("📄 **已读**：%d 页", state.TotalReadPageCnt))
 	}
 	if state.TotalReadTime > 0 {
-		lines = append(lines, fmt.Sprintf("**本次已读时长**：%s", formatDuration(state.TotalReadTime)))
+		lines = append(lines, fmt.Sprintf("⏱️ **时长**：%s", formatDuration(state.TotalReadTime)))
 	}
 	if state.CatalogName != "" {
-		lines = append(lines, fmt.Sprintf("**当前章节**：%s", state.CatalogName))
+		lines = append(lines, fmt.Sprintf("📌 **章节**：%s", state.CatalogName))
 	}
 	if state.CatalogProgress != "" {
-		lines = append(lines, fmt.Sprintf("**总进度**：%s", state.CatalogProgress))
+		lines = append(lines, fmt.Sprintf("📊 **总进度**：%s", state.CatalogProgress))
 	}
 	if state.TargetReadTime > 0 && state.TotalReadTime > 0 {
-		lines = append(lines, fmt.Sprintf("**本次目标完成度**：%s", progressText(state.TotalReadTime, state.TargetReadTime)))
-	}
-	if state.TotalReadPageCnt > 0 && state.TotalReadTime > 0 {
-		avg := state.TotalReadTime / time.Duration(state.TotalReadPageCnt)
-		lines = append(lines, fmt.Sprintf("**平均用时**：%s/页", formatDuration(avg)))
+		lines = append(lines, fmt.Sprintf("🎯 **目标**：%s / %s", progressText(state.TotalReadTime, state.TargetReadTime), formatDuration(state.TargetReadTime)))
 	}
 	if state.FinishedBook {
-		lines = append(lines, "**阅读结果**：全书阅读完毕")
+		lines = append(lines, "✅ **结果**：全书阅读完毕")
 	}
 	if state.Error != "" {
-		lines = append(lines, fmt.Sprintf("**异常信息**：%s", state.Error))
+		lines = append(lines, fmt.Sprintf("⚠️ **异常**：%s", truncateText(state.Error, 120)))
 	}
-	if state.Detail != "" {
-		lines = append(lines, state.Detail)
+	if state.Detail != "" && isWxReadProblem(status) {
+		lines = append(lines, fmt.Sprintf("💬 **提示**：%s", truncateText(state.Detail, 80)))
 	}
 	return strings.Join(lines, "\n")
+}
+
+func wxReadStatusText(status WxReadStatus) string {
+	label := wxReadStatusLabel(status)
+	switch {
+	case status == WxReadStatusFailed:
+		return colorText("red", label)
+	case status == WxReadStatusFinished:
+		return colorText("green", label)
+	default:
+		return colorText("grey", label)
+	}
+}
+
+func wxReadStatusLabel(status WxReadStatus) string {
+	switch status {
+	case WxReadStatusStarting:
+		return "任务已开始"
+	case WxReadStatusLoading:
+		return "加载中"
+	case WxReadStatusLoginRequired:
+		return "等待扫码"
+	case WxReadStatusLoginSuccess:
+		return "登录成功"
+	case WxReadStatusBookFound:
+		return "已找到书籍"
+	case WxReadStatusReady:
+		return "阅读页就绪"
+	case WxReadStatusReading:
+		return "阅读中"
+	case WxReadStatusProgressWarning:
+		return "进度异常"
+	case WxReadStatusFailed:
+		return "阅读失败"
+	case WxReadStatusFinished:
+		return "阅读完成"
+	default:
+		return "执行中"
+	}
+}
+
+func wxReadStatusEmoji(status WxReadStatus) string {
+	switch status {
+	case WxReadStatusFailed:
+		return "🔴"
+	case WxReadStatusFinished:
+		return "🟢"
+	case WxReadStatusLoginRequired:
+		return "📱"
+	case WxReadStatusProgressWarning:
+		return "🟠"
+	default:
+		return "🟡"
+	}
+}
+
+func isWxReadProblem(status WxReadStatus) bool {
+	return status == WxReadStatusProgressWarning || status == WxReadStatusFailed
 }
 
 func readingSubtitle(state WxReadCardState) string {
@@ -607,6 +661,10 @@ func withMention(openID, content string) string {
 		return content
 	}
 	return fmt.Sprintf("<at id=\"%s\"></at>\n\n%s", openID, content)
+}
+
+func colorText(color, text string) string {
+	return fmt.Sprintf("<font color='%s'>%s</font>", color, text)
 }
 
 func firstNonEmpty(values ...string) string {
@@ -692,4 +750,13 @@ func parseProgressNotifyEvery(value any) time.Duration {
 		return DefaultProgressNotifyEvery
 	}
 	return time.Duration(seconds) * time.Second
+}
+
+func truncateText(text string, limit int) string {
+	text = strings.TrimSpace(text)
+	if limit <= 0 || len([]rune(text)) <= limit {
+		return text
+	}
+	runes := []rune(text)
+	return string(runes[:limit]) + "..."
 }
