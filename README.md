@@ -31,6 +31,8 @@
 
 飞书通知已切换为模板卡片通知。任务开始时会发送一张卡片，登录二维码、选书、阅读进度、异常、失败和完成总结都会通过 feishu_bot_gateway 的卡片更新能力更新到同一条消息中，减少刷屏并保留完整执行状态。
 
+登录二维码会通过 gateway 的 `/send_card.images` 上传并嵌入卡片图片组件。卡片模板需要提前配置一个 `Image` 类型变量，默认变量名为 `content_image`；如果模板中使用其它变量名，可通过 `qrCodeImageVariable` 覆盖。wxread 仅在扫码阶段传递真实二维码图片，其它阶段不传图片参数；有图模板的占位图由 gateway 根据模板结构自动补齐。按钮 URL 仍会保留二维码查看页作为兜底入口。图片上传时会从页面二维码 `src` 中提取 `base64,` 后的原始字符串写入 `images[].base64`，不会携带 `data:image/png;base64,` 前缀。
+
 `NOTIFICATION_CONFIG_JSON` 示例：
 
 ```json
@@ -46,6 +48,7 @@
   "appName": "微信读书",
   "openId": "",
   "defaultUrl": "https://weread.qq.com/",
+  "qrCodeImageVariable": "content_image",
   "progressNotifySeconds": 60
 }
 ```

@@ -208,15 +208,18 @@ func TestLoginUpdatesSuccessForCookieAndQRCodeFlows(t *testing.T) {
 func TestRenderLoginUpdatesLoginRequiredWithQRCode(t *testing.T) {
 	recorder := resetWxReadTestState(t)
 	deviceCfg.FetchLoginQrCode = func(context.Context) (string, error) {
-		return "encoded-qrcode", nil
+		return "data:image/png;base64,encoded-qrcode", nil
 	}
 
 	if err := renderLogin(context.Background()); err != nil {
 		t.Fatalf("renderLogin() err = %v", err)
 	}
 	assertStatuses(t, recorder.upserts, []string{string(notify.WxReadStatusLoginRequired)})
-	if got := recorder.upserts[0].SubButtonURL; !strings.Contains(got, "encoded-qrcode") {
-		t.Fatalf("SubButtonURL = %s, want qrcode URL", got)
+	if got := recorder.upserts[0].SubButtonURL; !strings.Contains(got, "data:image/png;base64,encoded-qrcode") {
+		t.Fatalf("SubButtonURL = %s, want full qrcode data URL", got)
+	}
+	if got := recorder.upserts[0].QRCodeImageBase64; got != "encoded-qrcode" {
+		t.Fatalf("QRCodeImageBase64 = %s, want encoded-qrcode", got)
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -279,8 +280,8 @@ func renderLogin(ctx context.Context) error {
 		return err
 	} else {
 		qc := fmt.Sprintf("https://ximplez.github.io/base64-image-viewer/?target=%s", qrcode)
-		notifyWxRead(notify.WxReadStatusLoginRequired, wxReadStateWithQRCode(qc, "请打开二维码完成微信读书登录。"))
-		log.Printf("🍪已发送登录二维码【%s】", qc)
+		notifyWxRead(notify.WxReadStatusLoginRequired, wxReadStateWithQRCode(qc, qrcodeImageBase64(qrcode), "请打开二维码完成微信读书登录。"))
+		log.Printf("🍪已发送登录二维码")
 	}
 	return nil
 }
@@ -385,8 +386,18 @@ func wxReadState(readTime time.Duration, errText, detail string) notify.WxReadCa
 	}
 }
 
-func wxReadStateWithQRCode(qrcodeURL, detail string) notify.WxReadCardState {
+func wxReadStateWithQRCode(qrcodeURL, qrcodeImage, detail string) notify.WxReadCardState {
 	state := wxReadState(0, "", detail)
 	state.QRCodeURL = qrcodeURL
+	state.QRCodeImageBase64 = qrcodeImage
 	return state
+}
+
+func qrcodeImageBase64(qrcode string) string {
+	qrcode = strings.TrimSpace(qrcode)
+	const base64Prefix = "base64,"
+	if index := strings.Index(qrcode, base64Prefix); index >= 0 {
+		return qrcode[index+len(base64Prefix):]
+	}
+	return qrcode
 }

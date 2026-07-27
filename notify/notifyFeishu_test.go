@@ -61,13 +61,20 @@ func TestFeishuCardNotifierUpsertSendsThenUpdates(t *testing.T) {
 	if got := requests[1].TemplateVariable["title"]; got != "阅读进行中" {
 		t.Fatalf("updated title = %v, want 阅读进行中", got)
 	}
+	if len(requests[0].Images) != 0 {
+		t.Fatalf("first images length = %d, want 0", len(requests[0].Images))
+	}
+	if len(requests[1].Images) != 0 {
+		t.Fatalf("updated images length = %d, want 0", len(requests[1].Images))
+	}
 }
 
 func TestBuildWxReadLoginCardUsesQRCodeButton(t *testing.T) {
 	card := BuildWxReadCard(WxReadStatusLoginRequired, WxReadCardState{
-		BookTitle:      "测试书籍",
-		TargetReadTime: DefaultProgressNotifyEvery,
-		QRCodeURL:      "https://example.com/qrcode",
+		BookTitle:         "测试书籍",
+		TargetReadTime:    DefaultProgressNotifyEvery,
+		QRCodeURL:         "https://example.com/qrcode",
+		QRCodeImageBase64: "AQID",
 	})
 	vars := card.toTemplateVariable()
 
@@ -79,6 +86,63 @@ func TestBuildWxReadLoginCardUsesQRCodeButton(t *testing.T) {
 	}
 	if got := vars["title_style"]; got != "orange" {
 		t.Fatalf("title_style = %v, want orange", got)
+	}
+	images := card.toGatewayImages(DefaultQRCodeImageVariable)
+	if len(images) != 1 {
+		t.Fatalf("images length = %d, want 1", len(images))
+	}
+	if images[0].Variable != DefaultQRCodeImageVariable {
+		t.Fatalf("images[0].Variable = %s, want %s", images[0].Variable, DefaultQRCodeImageVariable)
+	}
+	if images[0].Base64 != "AQID" {
+		t.Fatalf("images[0].Base64 = %s, want qrcode base64", images[0].Base64)
+	}
+	if images[0].FileName != "wxread-login-qrcode.png" {
+		t.Fatalf("images[0].FileName = %s, want wxread-login-qrcode.png", images[0].FileName)
+	}
+}
+
+func TestFeishuCardNotifierSendsQRCodeImageThroughGateway(t *testing.T) {
+	var request sendCardRequest
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"data": map[string]any{
+				"messageId": "om_test",
+			},
+		})
+	}))
+	defer server.Close()
+
+	notifier := NewFeishuCardNotifier(CardConfig{
+		Enabled:             true,
+		GatewayBaseURL:      server.URL,
+		GatewayAuthToken:    "token",
+		AppID:               "cli_test",
+		TemplateID:          "ctp_test",
+		QRCodeImageVariable: "login_qrcode",
+	})
+	notifier.Upsert(BuildWxReadCard(WxReadStatusLoginRequired, WxReadCardState{
+		BookTitle:         "测试书籍",
+		TargetReadTime:    DefaultProgressNotifyEvery,
+		QRCodeURL:         "https://example.com/qrcode",
+		QRCodeImageBase64: "AQID",
+	}))
+
+	if len(request.Images) != 1 {
+		t.Fatalf("request.Images length = %d, want 1", len(request.Images))
+	}
+	if request.Images[0].Variable != "login_qrcode" {
+		t.Fatalf("request.Images[0].Variable = %s, want login_qrcode", request.Images[0].Variable)
+	}
+	if request.Images[0].Base64 != "AQID" {
+		t.Fatalf("request.Images[0].Base64 = %s, want qrcode base64", request.Images[0].Base64)
+	}
+	if request.Images[0].ContentType != "image/png" {
+		t.Fatalf("request.Images[0].ContentType = %s, want image/png", request.Images[0].ContentType)
 	}
 }
 

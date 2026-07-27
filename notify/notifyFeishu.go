@@ -16,6 +16,7 @@ import (
 const (
 	DefaultWxReadAppName       = "微信读书"
 	DefaultWxReadURL           = "https://weread.qq.com/"
+	DefaultQRCodeImageVariable = "content_image"
 	DefaultProgressNotifyEvery = time.Minute
 	NotificationConfigEnv      = "NOTIFICATION_CONFIG_JSON"
 )
@@ -33,6 +34,7 @@ type CardConfig struct {
 	AppName             string
 	OpenID              string
 	DefaultURL          string
+	QRCodeImageVariable string
 	ProgressNotifyEvery time.Duration
 }
 
@@ -58,6 +60,7 @@ type CardMessage struct {
 	SubButtonText      string
 	SubButtonDisabled  bool
 	SubButtonURL       string
+	QRCodeImageBase64  string
 	OpenID             string
 	Status             string
 	Action             string
@@ -65,16 +68,17 @@ type CardMessage struct {
 }
 
 type WxReadCardState struct {
-	BookTitle        string
-	TargetReadTime   time.Duration
-	TotalReadTime    time.Duration
-	TotalReadPageCnt int64
-	CatalogName      string
-	CatalogProgress  string
-	FinishedBook     bool
-	QRCodeURL        string
-	Error            string
-	Detail           string
+	BookTitle         string
+	TargetReadTime    time.Duration
+	TotalReadTime     time.Duration
+	TotalReadPageCnt  int64
+	CatalogName       string
+	CatalogProgress   string
+	FinishedBook      bool
+	QRCodeURL         string
+	QRCodeImageBase64 string
+	Error             string
+	Detail            string
 }
 
 type WxReadStatus string
@@ -100,6 +104,14 @@ type sendCardRequest struct {
 	TemplateID          string         `json:"templateId"`
 	TemplateVersionName string         `json:"templateVersionName,omitempty"`
 	TemplateVariable    map[string]any `json:"templateVariable"`
+	Images              []cardImageReq `json:"images,omitempty"`
+}
+
+type cardImageReq struct {
+	Variable    string `json:"variable"`
+	Base64      string `json:"base64,omitempty"`
+	FileName    string `json:"fileName,omitempty"`
+	ContentType string `json:"contentType,omitempty"`
 }
 
 type gatewayCardResponse struct {
@@ -122,6 +134,7 @@ type notificationConfigJSON struct {
 	AppName             string               `json:"appName"`
 	OpenID              string               `json:"openId"`
 	DefaultURL          string               `json:"defaultUrl"`
+	QRCodeImageVariable string               `json:"qrCodeImageVariable"`
 	ProgressSeconds     any                  `json:"progressNotifySeconds"`
 	Card                notificationCardJSON `json:"card"`
 }
@@ -165,6 +178,7 @@ func NewCardConfigFromEnv(getEnv func(string) string) CardConfig {
 		AppName:             firstNonEmpty(raw.AppName, DefaultWxReadAppName),
 		OpenID:              firstNonEmpty(raw.OpenID, raw.Card.OpenID),
 		DefaultURL:          firstNonEmpty(raw.DefaultURL, raw.Card.SubButtonURL, DefaultWxReadURL),
+		QRCodeImageVariable: firstNonEmpty(raw.QRCodeImageVariable, DefaultQRCodeImageVariable),
 		ProgressNotifyEvery: parseProgressNotifyEvery(raw.ProgressSeconds),
 	}
 	return cfg.normalize()
@@ -242,6 +256,7 @@ func (n *FeishuCardNotifier) callGateway(messageID string, message CardMessage) 
 		TemplateID:          n.config.TemplateID,
 		TemplateVersionName: n.config.TemplateVersionName,
 		TemplateVariable:    message.toTemplateVariable(),
+		Images:              message.toGatewayImages(n.config.QRCodeImageVariable),
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -329,6 +344,7 @@ func BuildWxReadCard(status WxReadStatus, state WxReadCardState) CardMessage {
 		card.MainButtonText = "等待扫码"
 		card.SubButtonText = "打开登录二维码"
 		card.SubButtonURL = state.QRCodeURL
+		card.QRCodeImageBase64 = state.QRCodeImageBase64
 	case WxReadStatusLoginSuccess:
 		card.Title = "登录成功"
 		card.SubTitle = "正在查找目标书籍"
@@ -386,6 +402,7 @@ func (c CardConfig) normalize() CardConfig {
 	c.AppName = firstNonEmpty(c.AppName, DefaultWxReadAppName)
 	c.OpenID = strings.TrimSpace(c.OpenID)
 	c.DefaultURL = firstNonEmpty(c.DefaultURL, DefaultWxReadURL)
+	c.QRCodeImageVariable = firstNonEmpty(c.QRCodeImageVariable, DefaultQRCodeImageVariable)
 	if c.ProgressNotifyEvery <= 0 {
 		c.ProgressNotifyEvery = DefaultProgressNotifyEvery
 	}
@@ -450,6 +467,21 @@ func (c CardConfig) applyMessageDefaults(message CardMessage) CardMessage {
 		message.Timestamp = time.Now()
 	}
 	return message
+}
+
+func (m CardMessage) toGatewayImages(variable string) []cardImageReq {
+	base64Value := strings.TrimSpace(m.QRCodeImageBase64)
+	if base64Value == "" {
+		return nil
+	}
+	return []cardImageReq{
+		{
+			Variable:    firstNonEmpty(variable, DefaultQRCodeImageVariable),
+			Base64:      base64Value,
+			FileName:    "wxread-login-qrcode.png",
+			ContentType: "image/png",
+		},
+	}
 }
 
 func (m CardMessage) toTemplateVariable() map[string]any {
