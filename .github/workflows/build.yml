@@ -29,13 +29,13 @@ jobs:
     runs-on: ubuntu-latest
     # 运行步骤
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: build
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version-file: build/go.mod
-      - uses: actions/checkout@v4
-        with:
-          path: build
 
       - uses: actions/checkout@v4
         with:
